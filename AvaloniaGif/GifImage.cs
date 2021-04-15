@@ -21,7 +21,7 @@ namespace AvaloniaGif
         public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<GifImage, bool>("AutoStart");
         public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<GifImage, StretchDirection>("StretchDirection");
         public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<GifImage, Stretch>("Stretch");
-        private RenderTargetBitmap backingRTB;
+        private Bitmap backingRTB;
 
         static GifImage()
         {
@@ -88,38 +88,59 @@ namespace AvaloniaGif
         {
             var image = e.Sender as GifImage;
             if (image == null)
-                return; 
+                return;
         }
 
         public override void Render(DrawingContext context)
         {
-            if (gifInstance.GetBitmap() is WriteableBitmap source && backingRTB is not null)
+            if (backingRTB is RenderTargetBitmap b)
             {
-                using (var ctx = backingRTB.CreateDrawingContext(null))
+                if (gifInstance?.GetBitmap() is WriteableBitmap source && b is not null)
                 {
+                    using var ctx = b.CreateDrawingContext(null);
                     var ts = new Rect(source.Size);
-                    ctx.DrawBitmap(source.PlatformImpl, 1, ts,ts);
+                    ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
+                }
+                if (b is not null && Bounds.Width > 0 && Bounds.Height > 0)
+                {
+                    var viewPort = new Rect(Bounds.Size);
+                    var sourceSize = b.Size;
+
+                    var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+                    var scaledSize = sourceSize * scale;
+                    var destRect = viewPort
+                        .CenterRect(new Rect(scaledSize))
+                        .Intersect(viewPort);
+
+                    var sourceRect = new Rect(sourceSize)
+                        .CenterRect(new Rect(destRect.Size / scale));
+
+                    var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+
+                    context.DrawImage(b, sourceRect, destRect, interpolationMode);
                 }
             }
-            if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
+            else
             {
-                var viewPort = new Rect(Bounds.Size);
-                var sourceSize = backingRTB.Size;
+                if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
+                {
+                    var viewPort = new Rect(Bounds.Size);
+                    var sourceSize = backingRTB.Size;
 
-                var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
-                var scaledSize = sourceSize * scale;
-                var destRect = viewPort
-                    .CenterRect(new Rect(scaledSize))
-                    .Intersect(viewPort);
-                
-                var sourceRect = new Rect(sourceSize)
-                    .CenterRect(new Rect(destRect.Size / scale));
+                    var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+                    var scaledSize = sourceSize * scale;
+                    var destRect = viewPort
+                        .CenterRect(new Rect(scaledSize))
+                        .Intersect(viewPort);
 
-                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+                    var sourceRect = new Rect(sourceSize)
+                        .CenterRect(new Rect(destRect.Size / scale));
 
-                context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
+                    var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+
+                    context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
+                }
             }
-            
             Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
@@ -157,7 +178,7 @@ namespace AvaloniaGif
                 return new Size();
             }
         }
-        
+
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as GifImage;
@@ -167,7 +188,7 @@ namespace AvaloniaGif
             image.gifInstance?.Dispose();
             image.backingRTB?.Dispose();
             image.backingRTB = null;
-            
+
             var value = e.NewValue;
             if (value is string s)
                 value = new Uri(s);
@@ -175,7 +196,14 @@ namespace AvaloniaGif
             image.gifInstance = new GifInstance();
             image.gifInstance.SetSource(value);
 
-            image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+            if (image.gifInstance.ImageType == ImageFormat.gif)
+            {
+                image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+            }
+            else
+            {
+                image.backingRTB = image.gifInstance.GetBitmap();
+            }
         }
     }
 }
