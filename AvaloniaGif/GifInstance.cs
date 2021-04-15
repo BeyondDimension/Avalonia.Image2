@@ -22,6 +22,7 @@ namespace AvaloniaGif
         public Progress<int> Progress { get; private set; }
         
         bool _streamCanDispose;
+        private readonly object _bitmapSync = new();
         private GifDecoder _gifDecoder;
         private GifBackgroundWorker _bgWorker;
         private WriteableBitmap _targetBitmap;
