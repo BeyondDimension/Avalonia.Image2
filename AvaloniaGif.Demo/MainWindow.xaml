@@ -12,7 +12,7 @@
             <ListBox SelectedItem="{Binding Path=SelectedGif}"
                      Items="{Binding Path=AvailableGifs}" />
         </StackPanel>
-        <gif:GifImage Grid.Column="1" SourceUriRaw="{Binding Path=SelectedGif}" 
+        <gif:GifImage Grid.Column="1" SourceUri="{Binding Path=SelectedGif}" AutoStart="True"
                       Stretch="Uniform"
                       StretchDirection="Both" />
     </Grid>

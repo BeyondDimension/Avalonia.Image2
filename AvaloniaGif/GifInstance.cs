@@ -43,6 +43,17 @@ namespace AvaloniaGif
         private bool _hasNewFrame;
         private bool _isDisposed;
 
+        static void TryReset(Stream s)
+        {
+            if (s.CanSeek)
+            {
+                if (s.Position > 0)
+                {
+                    s.Position = 0;
+                }
+            }
+        }
+
         public void SetSource(object newValue)
         {
             var sourceUri = newValue as Uri;
@@ -75,10 +86,11 @@ namespace AvaloniaGif
                 return;
             }
 
+            TryReset(Stream);
             byte[] typedata = new byte[4];
             Stream.Read(typedata, 0, 4);
-            if (Stream.Position > 0)
-                Stream.Position = 0;
+            TryReset(Stream);
+
             ImageType = GetImageFormat(typedata);
 
             if (ImageType == ImageFormat.gif)
@@ -156,7 +168,7 @@ namespace AvaloniaGif
         public void Dispose()
         {
             _isDisposed = true;
-            _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
+            _bgWorker?.SendCommand(BgWorkerCommand.Pause);
             _targetBitmap?.Dispose();
         }
 

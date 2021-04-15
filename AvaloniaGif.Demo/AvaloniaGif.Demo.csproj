@@ -17,6 +17,7 @@
   <ItemGroup>
     <None Remove="Images\app.gif" />
     <None Remove="Images\library_hero.jpg" />
+    <None Remove="Images\t.gif" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Images\library_hero.jpg" />

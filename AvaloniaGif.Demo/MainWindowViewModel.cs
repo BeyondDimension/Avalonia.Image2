@@ -23,6 +23,7 @@ namespace AvaloniaGif.Demo
                 "resm:AvaloniaGif.Demo.Images.newton-cradle.gif",
                 "resm:AvaloniaGif.Demo.Images.library_hero.jpg",
                 "resm:AvaloniaGif.Demo.Images.app.gif",
+                "resm:AvaloniaGif.Demo.Images.t.gif",
                 
                 // Great shots by Vitaly Silkin, free to use:
                 // https://dribbble.com/colder/projects/219798-Loaders
