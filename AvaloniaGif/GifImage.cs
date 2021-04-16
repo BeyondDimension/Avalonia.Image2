@@ -8,6 +8,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 
 namespace AvaloniaGif
 {
@@ -22,7 +23,7 @@ namespace AvaloniaGif
         public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<GifImage, StretchDirection>("StretchDirection");
         public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<GifImage, Stretch>("Stretch");
         private Bitmap backingRTB;
-
+        private ImageType imageType;
         static GifImage()
         {
             SourceUriRawProperty.Changed.Subscribe(SourceChanged);
@@ -120,26 +121,23 @@ namespace AvaloniaGif
                     context.DrawImage(b, sourceRect, destRect, interpolationMode);
                 }
             }
-            else
+            else if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
             {
-                if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
-                {
-                    var viewPort = new Rect(Bounds.Size);
-                    var sourceSize = backingRTB.Size;
+                var viewPort = new Rect(Bounds.Size);
+                var sourceSize = backingRTB.Size;
 
-                    var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
-                    var scaledSize = sourceSize * scale;
-                    var destRect = viewPort
-                        .CenterRect(new Rect(scaledSize))
-                        .Intersect(viewPort);
+                var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+                var scaledSize = sourceSize * scale;
+                var destRect = viewPort
+                    .CenterRect(new Rect(scaledSize))
+                    .Intersect(viewPort);
 
-                    var sourceRect = new Rect(sourceSize)
-                        .CenterRect(new Rect(destRect.Size / scale));
+                var sourceRect = new Rect(sourceSize)
+                    .CenterRect(new Rect(destRect.Size / scale));
 
-                    var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
 
-                    context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
-                }
+                context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
             }
             Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
@@ -184,25 +182,50 @@ namespace AvaloniaGif
             var image = e.Sender as GifImage;
             if (image == null)
                 return;
+            if (e.NewValue == null)
+                return;
 
             image.gifInstance?.Dispose();
             image.backingRTB?.Dispose();
             image.backingRTB = null;
 
-            var value = e.NewValue;
-            if (value is string s)
-                value = new Uri(s);
-
-            image.gifInstance = new GifInstance();
-            image.gifInstance.SetSource(value);
-
-            if (image.gifInstance.ImageType == ImageFormat.gif)
+            Stream value = null;
+            if (e.NewValue is string s)
             {
+                var suri = new Uri(s);
+                if (suri.OriginalString.Trim().StartsWith("resm"))
+                {
+                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assetLocator.Open(suri);
+                }
+            }
+            else if (e.NewValue is Uri uri)
+            {
+                if (uri.OriginalString.Trim().StartsWith("resm"))
+                {
+                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assetLocator.Open(uri);
+                }
+            }
+            else if (e.NewValue is Stream stream)
+            {
+                value = stream;
+            }
+
+            if (value == null)
+                return;
+
+            image.imageType = value.GetImageType();
+
+            if (image.imageType == ImageType.gif)
+            {
+                image.gifInstance = new GifInstance();
+                image.gifInstance.SetSource(value);
                 image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
             }
             else
             {
-                image.backingRTB = image.gifInstance.GetBitmap();
+                image.backingRTB = new Bitmap(value);
             }
         }
     }
