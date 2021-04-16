@@ -6,6 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia;
 using System.Linq;
 using Avalonia.Platform;
+using System.Collections.Generic;
 
 namespace AvaloniaGif
 {
@@ -102,7 +103,6 @@ namespace AvaloniaGif
             var newVal = (bool)e.NewValue;
             this.AutoStart = newVal;
         }
-
 
         public void Dispose()
         {

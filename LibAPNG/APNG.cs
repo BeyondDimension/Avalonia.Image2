@@ -16,7 +16,7 @@ namespace LibAPNG
         }
 
         public APNG(Stream stream)
-            :this(Helper.StreamToBytes(stream))
+            : this(Helper.StreamToBytes(stream))
         {
         }
 
@@ -163,9 +163,9 @@ namespace LibAPNG
         ///     Gets the frame array.
         ///     If IsSimplePNG = True, returns empty
         /// </summary>
-        public Frame[] Frames
+        public IReadOnlyList<Frame> Frames
         {
-            get { return frames.ToArray(); }
+            get { return frames; }
         }
 
         /// <summary>

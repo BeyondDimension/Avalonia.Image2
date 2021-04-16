@@ -5,11 +5,11 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using AvaloniaGif.Decoding;
 using System.Linq;
-using LibAPNG;
 using System.IO;
 using Avalonia.Media.Imaging;
 using Avalonia;
 using Avalonia.Platform;
+using SprinterPublishing;
 
 namespace AvaloniaGif
 {
@@ -17,7 +17,7 @@ namespace AvaloniaGif
     {
         private static readonly Stopwatch _timer = Stopwatch.StartNew();
         private APNG _apng;
-        private Frame[] Frames => _apng.Frames;
+        private IReadOnlyList<Bitmap> Frames => _apng.;
         public Bitmap CurentFrame { get; set; }
 
         private Task _bgThread;
@@ -257,7 +257,7 @@ namespace AvaloniaGif
                 return;
             }
 
-            _currentIndex = (_currentIndex + 1) % Frames.Length;
+            _currentIndex = (_currentIndex + 1) % Frames.Count;
 
             CurrentFrameChanged?.Invoke();
 
