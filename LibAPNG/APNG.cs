@@ -15,6 +15,11 @@ namespace LibAPNG
         {
         }
 
+        public APNG(Stream stream)
+            :this(Helper.StreamToBytes(stream))
+        {
+        }
+
         public APNG(byte[] fileBytes)
         {
             ms = new MemoryStream(fileBytes);

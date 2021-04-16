@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AvaloniaGif
 {
-    public enum ImageType
+    internal enum ImageType
     {
         bmp,
         jpeg,
@@ -15,7 +15,7 @@ namespace AvaloniaGif
         unknown
     }
 
-    public static class ImageFormat
+    internal static class ImageFormat
     {
         public static ImageType GetImageType(this byte[] bytes)
         {
@@ -51,7 +51,6 @@ namespace AvaloniaGif
 
             return ImageType.unknown;
         }
-
 
         public static ImageType GetImageType(this Stream stream)
         {

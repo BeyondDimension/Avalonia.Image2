@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace LibAPNG
@@ -12,6 +13,19 @@ namespace LibAPNG
 
         private List<IDATChunk> idatChunks = new List<IDATChunk>();
         private List<OtherChunk> otherChunks = new List<OtherChunk>();
+
+        public TimeSpan FrameDelay
+        {
+            get
+            {
+                //var keyTime = TimeSpan.Zero;
+                var delayDen = (double)(fcTLChunk.DelayDen == 0 ? 100 : fcTLChunk.DelayDen);
+                var keyTime = fcTLChunk.DelayNum == 0
+                    ? TimeSpan.FromMilliseconds(1)
+                    : TimeSpan.FromSeconds(fcTLChunk.DelayNum / delayDen);
+                return keyTime;
+            }
+        }
 
         /// <summary>
         ///     Gets or Sets the acTL chunk
@@ -61,6 +75,7 @@ namespace LibAPNG
         {
             idatChunks.Add(chunk);
         }
+
 
         /// <summary>
         ///     Gets the frame as PNG FileStream.

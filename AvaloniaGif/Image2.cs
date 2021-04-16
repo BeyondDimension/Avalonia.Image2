@@ -6,34 +6,33 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
 namespace AvaloniaGif
 {
-    public class GifImage : Control
+    public class Image2 : Control
     {
-        public static readonly StyledProperty<string> SourceUriRawProperty = AvaloniaProperty.Register<GifImage, string>("SourceUriRaw");
-        public static readonly StyledProperty<Uri> SourceUriProperty = AvaloniaProperty.Register<GifImage, Uri>("SourceUri");
-        public static readonly StyledProperty<Stream> SourceStreamProperty = AvaloniaProperty.Register<GifImage, Stream>("SourceStream");
-        public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<GifImage, IterationCount>("IterationCount");
+        public static readonly StyledProperty<string> SourceUriRawProperty = AvaloniaProperty.Register<Image2, string>("SourceUriRaw");
+        public static readonly StyledProperty<Uri> SourceUriProperty = AvaloniaProperty.Register<Image2, Uri>("SourceUri");
+        public static readonly StyledProperty<Stream> SourceStreamProperty = AvaloniaProperty.Register<Image2, Stream>("SourceStream");
+        public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>("IterationCount");
+        public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>("AutoStart");
+        public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>("StretchDirection");
+        public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>("Stretch");
         private GifInstance gifInstance;
-        public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<GifImage, bool>("AutoStart");
-        public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<GifImage, StretchDirection>("StretchDirection");
-        public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<GifImage, Stretch>("Stretch");
+        private ApngInstance apngInstance;
         private Bitmap backingRTB;
         private ImageType imageType;
-        static GifImage()
+        static Image2()
         {
             SourceUriRawProperty.Changed.Subscribe(SourceChanged);
             SourceUriProperty.Changed.Subscribe(SourceChanged);
             SourceStreamProperty.Changed.Subscribe(SourceChanged);
             IterationCountProperty.Changed.Subscribe(IterationCountChanged);
             AutoStartProperty.Changed.Subscribe(AutoStartChanged);
-            AffectsRender<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
-            AffectsArrange<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
-            AffectsMeasure<GifImage>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            AffectsRender<Image2>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            AffectsArrange<Image2>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            AffectsMeasure<Image2>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
         }
 
         public string SourceUriRaw
@@ -80,32 +79,26 @@ namespace AvaloniaGif
 
         private static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as GifImage;
+            var image = e.Sender as Image2;
             if (image == null)
                 return;
         }
 
         private static void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as GifImage;
+            var image = e.Sender as Image2;
             if (image == null)
                 return;
         }
 
         public override void Render(DrawingContext context)
         {
-            if (backingRTB is RenderTargetBitmap b)
+            void RenderBitmap(Bitmap bitmap)
             {
-                if (gifInstance?.GetBitmap() is WriteableBitmap source && b is not null)
-                {
-                    using var ctx = b.CreateDrawingContext(null);
-                    var ts = new Rect(source.Size);
-                    ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
-                }
-                if (b is not null && Bounds.Width > 0 && Bounds.Height > 0)
+                if (bitmap is not null && Bounds.Width > 0 && Bounds.Height > 0)
                 {
                     var viewPort = new Rect(Bounds.Size);
-                    var sourceSize = b.Size;
+                    var sourceSize = bitmap.Size;
 
                     var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
                     var scaledSize = sourceSize * scale;
@@ -118,27 +111,35 @@ namespace AvaloniaGif
 
                     var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
 
-                    context.DrawImage(b, sourceRect, destRect, interpolationMode);
+                    context.DrawImage(bitmap, sourceRect, destRect, interpolationMode);
                 }
             }
-            else if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
+
+
+            if (backingRTB is RenderTargetBitmap b)
             {
-                var viewPort = new Rect(Bounds.Size);
-                var sourceSize = backingRTB.Size;
-
-                var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
-                var scaledSize = sourceSize * scale;
-                var destRect = viewPort
-                    .CenterRect(new Rect(scaledSize))
-                    .Intersect(viewPort);
-
-                var sourceRect = new Rect(sourceSize)
-                    .CenterRect(new Rect(destRect.Size / scale));
-
-                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-
-                context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
+                if (imageType == ImageType.gif)
+                {
+                    if (gifInstance?.GetBitmap() is WriteableBitmap source && b is not null)
+                    {
+                        using var ctx = b.CreateDrawingContext(null);
+                        var ts = new Rect(source.Size);
+                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
+                        RenderBitmap(b);
+                    }
+                }
+                else if (imageType == ImageType.png)
+                {
+                    if (apngInstance?.GetBitmap() is Bitmap source && b is not null)
+                    {
+                        using var ctx = b.CreateDrawingContext(null);
+                        var ts = new Rect(source.Size);
+                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
+                        RenderBitmap(b);
+                    }
+                }
             }
+            RenderBitmap(backingRTB);
             Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
@@ -179,13 +180,14 @@ namespace AvaloniaGif
 
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as GifImage;
+            var image = e.Sender as Image2;
             if (image == null)
                 return;
             if (e.NewValue == null)
                 return;
 
             image.gifInstance?.Dispose();
+            image.apngInstance?.Dispose();
             image.backingRTB?.Dispose();
             image.backingRTB = null;
 
@@ -222,6 +224,12 @@ namespace AvaloniaGif
                 image.gifInstance = new GifInstance();
                 image.gifInstance.SetSource(value);
                 image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+            }
+            else if (image.imageType == ImageType.png)
+            {
+                image.apngInstance = new ApngInstance();
+                image.apngInstance.SetSource(value);
+                image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
             }
             else
             {

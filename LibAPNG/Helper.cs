@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace LibAPNG
 {
@@ -47,6 +48,15 @@ namespace LibAPNG
         internal static UInt16 ConvertEndian(UInt16 i)
         {
             return BitConverter.ToUInt16(ConvertEndian(BitConverter.GetBytes(i)), 0);
+        }
+
+        internal static byte[] StreamToBytes(Stream stream)
+        {
+            byte[] bytes = new byte[stream.Length];
+            stream.Read(bytes, 0, bytes.Length);
+            // 设置当前流的位置为流的开始 
+            stream.Seek(0, SeekOrigin.Begin);
+            return bytes;
         }
 
         /// <summary>

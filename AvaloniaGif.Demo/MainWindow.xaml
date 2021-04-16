@@ -3,6 +3,7 @@
         xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
         x:Class="AvaloniaGif.Demo.MainWindow"
         Title="GIFs on Avalonia!"
+        WindowStartupLocation="CenterScreen"
         Height="480" Width="680"
         Background="White">
     <Grid ColumnDefinitions="2*, 3*">
@@ -12,8 +13,12 @@
             <ListBox SelectedItem="{Binding Path=SelectedGif}"
                      Items="{Binding Path=AvailableGifs}" />
         </StackPanel>
-        <gif:GifImage Grid.Column="1" SourceUri="{Binding Path=SelectedGif}" AutoStart="True"
+        <Panel Grid.Column="1">
+            <TextBlock Text="透明测试" FontSize="50" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
+            <gif:Image2  SourceUri="{Binding Path=SelectedGif}" AutoStart="True"
                       Stretch="Uniform"
                       StretchDirection="Both" />
+        </Panel>
+
     </Grid>
 </Window>

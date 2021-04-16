@@ -1,38 +1,28 @@
-using AvaloniaGif.Decoding;
+﻿using Avalonia.Animation;
 using System;
+using LibAPNG;
 using System.IO;
-using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Animation;
-using System.Threading;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
-using Avalonia.Rendering;
-using Avalonia.Logging;
-using JetBrains.Annotations;
-using System.Text;
+using Avalonia;
 using System.Linq;
+using Avalonia.Platform;
 
 namespace AvaloniaGif
 {
-    public class GifInstance : IDisposable
+    public class ApngInstance : IDisposable
     {
         public Stream Stream { get; private set; }
         public IterationCount IterationCount { get; private set; }
         public bool AutoStart { get; private set; } = true;
-        public Progress<int> Progress { get; private set; }
 
+        public PixelSize ApngPixelSize { get; private set; }
 
-        bool _streamCanDispose;
         private readonly object _bitmapSync = new();
-        private GifDecoder _gifDecoder;
-        private GifBackgroundWorker _bgWorker;
-        private WriteableBitmap _targetBitmap;
+        private APNG _apng;
+        private ApngBackgroundWorker _bgWorker;
+        private Bitmap _targetBitmap;
         private bool _hasNewFrame;
         private bool _isDisposed;
-
-
 
         public void SetSource(Stream stream)
         {
@@ -44,21 +34,33 @@ namespace AvaloniaGif
                 return;
             }
 
-            _gifDecoder = new GifDecoder(Stream);
-            _bgWorker = new GifBackgroundWorker(_gifDecoder);
-            var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);
+            _apng = new APNG(Stream);
 
-            _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
-            _bgWorker.CurrentFrameChanged += FrameChanged;
-            GifPixelSize = pixSize;
-            Run();
+            if (_apng.IsSimplePNG)
+            {
+                _targetBitmap = new Bitmap(_apng.DefaultImage.GetStream());
+            }
+            else
+            {
+                var firstFrame = _apng.Frames.First();
+                _bgWorker = new ApngBackgroundWorker(_apng);
+                var pixSize = new PixelSize(firstFrame.IHDRChunk.Width, firstFrame.IHDRChunk.Height);
+
+                _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+                _bgWorker.CurrentFrameChanged += FrameChanged;
+                ApngPixelSize = pixSize;
+                Run();
+            }
         }
 
-        public PixelSize GifPixelSize { get; private set; }
-
-        public WriteableBitmap GetBitmap()
+        public Bitmap GetBitmap()
         {
-            WriteableBitmap ret = null;
+            if (_apng.IsSimplePNG)
+            {
+                return _targetBitmap;
+            }
+
+            Bitmap ret = null;
             lock (_bitmapSync)
             {
                 if (_hasNewFrame)
@@ -74,13 +76,10 @@ namespace AvaloniaGif
         {
             lock (_bitmapSync)
             {
-                if (_targetBitmap is WriteableBitmap w)
-                {
-                    if (_isDisposed) return;
-                    _hasNewFrame = true;
-                    using var lockedBitmap = w?.Lock();
-                    _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
-                }
+                if (_isDisposed) return;
+                _hasNewFrame = true;
+                //using var lockedBitmap = w?.Lock();
+                _targetBitmap = _bgWorker.CurentFrame;
             }
         }
 
@@ -111,6 +110,5 @@ namespace AvaloniaGif
             _bgWorker?.SendCommand(BgWorkerCommand.Pause);
             _targetBitmap?.Dispose();
         }
-
     }
 }
