@@ -270,6 +270,8 @@ namespace AvaloniaGif
             {
                 image.gifInstance = new GifInstance();
                 image.gifInstance.SetSource(value);
+                if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
+                    return;
                 image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
             }
             else if (image.imageType == ImageType.png)
@@ -284,6 +286,8 @@ namespace AvaloniaGif
                 }
                 else
                 {
+                    if (image.apngInstance.ApngPixelSize.Width < 1 || image.apngInstance.ApngPixelSize.Height < 1)
+                        return;
                     image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
                 }
             }
