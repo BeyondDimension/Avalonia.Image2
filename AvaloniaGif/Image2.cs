@@ -7,16 +7,19 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.Platform;
+using System.Net;
 
 namespace AvaloniaGif
 {
     public class Image2 : Control
     {
-        public static readonly StyledProperty<string> SourceUriRawProperty = AvaloniaProperty.Register<Image2, string>("SourceUriRaw");
-        public static readonly StyledProperty<Uri> SourceUriProperty = AvaloniaProperty.Register<Image2, Uri>("SourceUri");
-        public static readonly StyledProperty<Stream> SourceStreamProperty = AvaloniaProperty.Register<Image2, Stream>("SourceStream");
+        public static readonly StyledProperty<object> SourceProperty = AvaloniaProperty.Register<Image2, object>("Source");
         public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>("IterationCount");
         public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>("AutoStart");
+
+        public static readonly StyledProperty<int> DecodeWidthProperty = AvaloniaProperty.Register<Image2, int>("DecodeWidth");
+        public static readonly StyledProperty<int> DecodeHeightProperty = AvaloniaProperty.Register<Image2, int>("DecodeHeight");
+
         public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>("StretchDirection");
         public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>("Stretch");
         private GifInstance gifInstance;
@@ -25,32 +28,20 @@ namespace AvaloniaGif
         private ImageType imageType;
         static Image2()
         {
-            SourceUriRawProperty.Changed.Subscribe(SourceChanged);
-            SourceUriProperty.Changed.Subscribe(SourceChanged);
-            SourceStreamProperty.Changed.Subscribe(SourceChanged);
+            SourceProperty.Changed.Subscribe(SourceChanged);
             IterationCountProperty.Changed.Subscribe(IterationCountChanged);
             AutoStartProperty.Changed.Subscribe(AutoStartChanged);
-            AffectsRender<Image2>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
-            AffectsArrange<Image2>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
-            AffectsMeasure<Image2>(SourceStreamProperty, SourceUriProperty, SourceUriRawProperty);
+            DecodeWidthProperty.Changed.Subscribe(DecodeWidthChanged);
+            DecodeHeightProperty.Changed.Subscribe(DecodeHeightChanged);
+            AffectsRender<Image2>(SourceProperty);
+            AffectsArrange<Image2>(SourceProperty);
+            AffectsMeasure<Image2>(SourceProperty);
         }
 
-        public string SourceUriRaw
+        public object Source
         {
-            get => GetValue(SourceUriRawProperty);
-            set => SetValue(SourceUriRawProperty, value);
-        }
-
-        public Uri SourceUri
-        {
-            get => GetValue(SourceUriProperty);
-            set => SetValue(SourceUriProperty, value);
-        }
-
-        public Stream SourceStream
-        {
-            get => GetValue(SourceStreamProperty);
-            set => SetValue(SourceStreamProperty, value);
+            get => GetValue(SourceProperty);
+            set => SetValue(SourceProperty, value);
         }
 
         public IterationCount IterationCount
@@ -65,6 +56,18 @@ namespace AvaloniaGif
             set => SetValue(AutoStartProperty, value);
         }
 
+        public int DecodeHeight
+        {
+            get => GetValue(DecodeHeightProperty);
+            set => SetValue(DecodeHeightProperty, value);
+        }
+
+        public int DecodeWidth
+        {
+            get => GetValue(DecodeWidthProperty);
+            set => SetValue(DecodeWidthProperty, value);
+        }
+
         public StretchDirection StretchDirection
         {
             get => GetValue(StretchDirectionProperty);
@@ -75,6 +78,20 @@ namespace AvaloniaGif
         {
             get => GetValue(StretchProperty);
             set => SetValue(StretchProperty, value);
+        }
+
+        private static void DecodeWidthChanged(AvaloniaPropertyChangedEventArgs e)
+        {
+            var image = e.Sender as Image2;
+            if (image == null)
+                return;
+        }
+
+        private static void DecodeHeightChanged(AvaloniaPropertyChangedEventArgs e)
+        {
+            var image = e.Sender as Image2;
+            if (image == null)
+                return;
         }
 
         private static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
@@ -97,6 +114,20 @@ namespace AvaloniaGif
             {
                 if (bitmap is not null && Bounds.Width > 0 && Bounds.Height > 0)
                 {
+                    if (DecodeWidth > 0)
+                    {
+                        var stream = new MemoryStream();
+                        bitmap.Save(stream);
+                        stream.Position = 0;
+                        bitmap = Bitmap.DecodeToWidth(stream, DecodeWidth, Avalonia.Visuals.Media.Imaging.BitmapInterpolationMode.MediumQuality);
+                    }
+                    else if (DecodeHeight > 0)
+                    {
+                        var stream = new MemoryStream();
+                        bitmap.Save(stream);
+                        stream.Position = 0;
+                        bitmap = Bitmap.DecodeToHeight(stream, DecodeHeight, Avalonia.Visuals.Media.Imaging.BitmapInterpolationMode.MediumQuality);
+                    }
                     var viewPort = new Rect(Bounds.Size);
                     var sourceSize = bitmap.Size;
 
@@ -110,11 +141,9 @@ namespace AvaloniaGif
                         .CenterRect(new Rect(destRect.Size / scale));
 
                     var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-
                     context.DrawImage(bitmap, sourceRect, destRect, interpolationMode);
                 }
             }
-
 
             if (backingRTB is RenderTargetBitmap b)
             {
@@ -192,14 +221,35 @@ namespace AvaloniaGif
             image.backingRTB = null;
 
             Stream value = null;
-            if (e.NewValue is string s)
+            if (e.NewValue is string rawUri)
             {
-                var suri = new Uri(s);
-                if (suri.OriginalString.Trim().StartsWith("resm"))
+                if (rawUri == string.Empty) return;
+
+                Uri uri;
+                if (File.Exists(rawUri))
                 {
-                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    value = assetLocator.Open(suri);
+                    value = File.OpenRead(rawUri);
                 }
+                //在列表中使用此方法性能极差
+                else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
+                {
+                    using var web = new WebClient();
+                    var bt = web.DownloadData(rawUri);
+                    using var stream = new MemoryStream(bt);
+                    value = stream;
+                }
+                else
+                {
+                    uri = new Uri(rawUri);
+                    var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assets.Open(uri);
+                }
+
+                //if (suri.OriginalString.Trim().StartsWith("resm"))
+                //{
+                //    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                //    value = assetLocator.Open(suri);
+                //}
             }
             else if (e.NewValue is Uri uri)
             {

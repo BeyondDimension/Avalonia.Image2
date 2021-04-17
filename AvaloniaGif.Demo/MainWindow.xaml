@@ -15,7 +15,10 @@
         </StackPanel>
         <Panel Grid.Column="1">
             <TextBlock Text="透明测试" FontSize="50" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
-            <gif:Image2  SourceUri="{Binding Path=SelectedGif}" AutoStart="True"
+            <gif:Image2
+                      Source="{Binding Path=SelectedGif}"
+                      DecodeWidth="200"
+                      AutoStart="True"
                       Stretch="Uniform"
                       StretchDirection="Both" />
         </Panel>
