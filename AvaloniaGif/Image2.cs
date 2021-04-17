@@ -8,6 +8,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.Platform;
 using System.Net;
+using Avalonia.Visuals.Media.Imaging;
 
 namespace AvaloniaGif
 {
@@ -22,6 +23,8 @@ namespace AvaloniaGif
 
         public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>("StretchDirection");
         public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>("Stretch");
+        public static readonly StyledProperty<BitmapInterpolationMode> QualityProperty = AvaloniaProperty.Register<Image2, BitmapInterpolationMode>("Quality");
+
         private GifInstance gifInstance;
         private ApngInstance apngInstance;
         private Bitmap backingRTB;
@@ -80,6 +83,12 @@ namespace AvaloniaGif
             set => SetValue(StretchProperty, value);
         }
 
+        public BitmapInterpolationMode Quality
+        {
+            get => GetValue(QualityProperty);
+            set => SetValue(QualityProperty, value);
+        }
+
         private static void DecodeWidthChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as Image2;
@@ -114,20 +123,6 @@ namespace AvaloniaGif
             {
                 if (bitmap is not null && Bounds.Width > 0 && Bounds.Height > 0)
                 {
-                    if (DecodeWidth > 0)
-                    {
-                        var stream = new MemoryStream();
-                        bitmap.Save(stream);
-                        stream.Position = 0;
-                        bitmap = Bitmap.DecodeToWidth(stream, DecodeWidth, Avalonia.Visuals.Media.Imaging.BitmapInterpolationMode.MediumQuality);
-                    }
-                    else if (DecodeHeight > 0)
-                    {
-                        var stream = new MemoryStream();
-                        bitmap.Save(stream);
-                        stream.Position = 0;
-                        bitmap = Bitmap.DecodeToHeight(stream, DecodeHeight, Avalonia.Visuals.Media.Imaging.BitmapInterpolationMode.MediumQuality);
-                    }
                     var viewPort = new Rect(Bounds.Size);
                     var sourceSize = bitmap.Size;
 
@@ -167,9 +162,11 @@ namespace AvaloniaGif
                         RenderBitmap(b);
                     }
                 }
+                RenderBitmap(backingRTB);
+                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+                return;
             }
             RenderBitmap(backingRTB);
-            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -279,11 +276,35 @@ namespace AvaloniaGif
             {
                 image.apngInstance = new ApngInstance();
                 image.apngInstance.SetSource(value);
-                image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
+                if (image.apngInstance.IsSimplePNG)
+                {
+                    image.apngInstance.Dispose();
+                    image.apngInstance = null;
+                    image.backingRTB = DecodeImage(value);
+                }
+                else
+                {
+                    image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
+                }
             }
             else
             {
-                image.backingRTB = new Bitmap(value);
+                image.backingRTB = DecodeImage(value);
+            }
+
+            Bitmap DecodeImage(Stream stream)
+            {
+                if (image?.DecodeWidth > 0)
+                {
+                    stream.Position = 0;
+                    return Bitmap.DecodeToWidth(stream, image.DecodeWidth, image.Quality);
+                }
+                else if (image?.DecodeHeight > 0)
+                {
+                    stream.Position = 0;
+                    return Bitmap.DecodeToHeight(stream, image.DecodeHeight, image.Quality);
+                }
+                return new Bitmap(stream);
             }
         }
     }

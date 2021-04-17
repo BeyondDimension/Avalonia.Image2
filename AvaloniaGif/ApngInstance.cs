@@ -16,6 +16,7 @@ namespace AvaloniaGif
         public bool AutoStart { get; private set; } = true;
 
         public PixelSize ApngPixelSize { get; private set; }
+        public bool IsSimplePNG { get; private set; }
 
         private readonly object _bitmapSync = new();
         private APNG _apng;
@@ -35,8 +36,9 @@ namespace AvaloniaGif
             }
 
             _apng = new APNG(Stream);
+            IsSimplePNG = _apng.IsSimplePNG;
 
-            if (_apng.IsSimplePNG)
+            if (IsSimplePNG)
             {
                 _targetBitmap = new Bitmap(_apng.DefaultImage.GetStream());
             }

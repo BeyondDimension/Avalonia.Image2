@@ -15,7 +15,9 @@
     <EmbeddedResource Include="Assets\*" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Images\3390_library_600x900.jpg" />
     <None Remove="Images\app.gif" />
+    <None Remove="Images\app.jpg" />
     <None Remove="Images\library_hero.jpg" />
     <None Remove="Images\t.gif" />
   </ItemGroup>
@@ -27,5 +29,9 @@
     <PackageReference Include="Avalonia.Desktop" Version="0.10.0" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.0" />
     <ProjectReference Include="..\AvaloniaGif\AvaloniaGif.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\3390_library_600x900.jpg" />
+    <EmbeddedResource Include="Images\app.jpg" />
   </ItemGroup>
 </Project>
