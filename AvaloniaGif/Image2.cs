@@ -226,7 +226,7 @@ namespace AvaloniaGif
                 Uri uri;
                 if (File.Exists(rawUri))
                 {
-                    value = File.OpenRead(rawUri);
+                    value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 }
                 //在列表中使用此方法性能极差
                 else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
