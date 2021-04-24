@@ -25,6 +25,7 @@ namespace AvaloniaGif.Demo
                 "resm:AvaloniaGif.Demo.Images.app.gif",
                 "resm:AvaloniaGif.Demo.Images.app.jpg",
                 "resm:AvaloniaGif.Demo.Images.t.gif",
+                "resm:AvaloniaGif.Demo.Images.avater_default.png",
                 
                 // Great shots by Vitaly Silkin, free to use:
                 // https://dribbble.com/colder/projects/219798-Loaders

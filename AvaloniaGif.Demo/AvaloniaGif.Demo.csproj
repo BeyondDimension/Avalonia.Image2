@@ -18,10 +18,12 @@
     <None Remove="Images\3390_library_600x900.jpg" />
     <None Remove="Images\app.gif" />
     <None Remove="Images\app.jpg" />
+    <None Remove="Images\avater_default.png" />
     <None Remove="Images\library_hero.jpg" />
     <None Remove="Images\t.gif" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Images\avater_default.png" />
     <EmbeddedResource Include="Images\library_hero.jpg" />
   </ItemGroup>
   <ItemGroup>

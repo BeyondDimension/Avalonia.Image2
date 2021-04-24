@@ -9,6 +9,7 @@ using Avalonia.Threading;
 using Avalonia.Platform;
 using System.Net;
 using Avalonia.Visuals.Media.Imaging;
+using System.Threading.Tasks;
 
 namespace AvaloniaGif
 {
@@ -204,7 +205,7 @@ namespace AvaloniaGif
             }
         }
 
-        private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
+        private async static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as Image2;
             if (image == null)
@@ -230,10 +231,7 @@ namespace AvaloniaGif
                 //在列表中使用此方法性能极差
                 else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
                 {
-                    using var web = new WebClient();
-                    var bt = web.DownloadData(rawUri);
-                    using var stream = new MemoryStream(bt);
-                    value = stream;
+                    value = await GetImageAsnyc(rawUri);
                 }
                 else
                 {
@@ -310,6 +308,15 @@ namespace AvaloniaGif
                 }
                 return new Bitmap(stream);
             }
+        }
+
+
+        private static async Task<Stream> GetImageAsnyc(string uri)
+        {
+            using var web = new WebClient();
+            var bt = await web.DownloadDataTaskAsync(uri);
+            using var stream = new MemoryStream(bt);
+            return stream;
         }
     }
 }
