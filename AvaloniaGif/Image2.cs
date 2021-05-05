@@ -208,99 +208,97 @@ namespace AvaloniaGif
 
         private async static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            try
+            var image = e.Sender as Image2;
+            if (image == null)
+                return;
+            if (e.NewValue == null)
+                return;
+
+            image.gifInstance?.Dispose();
+            image.apngInstance?.Dispose();
+            image.backingRTB?.Dispose();
+            image.backingRTB = null;
+
+            Stream value = null;
+            if (e.NewValue is string rawUri)
             {
-                var image = e.Sender as Image2;
-                if (image == null)
-                    return;
-                if (e.NewValue == null)
-                    return;
+                if (rawUri == string.Empty) return;
 
-                image.gifInstance?.Dispose();
-                image.apngInstance?.Dispose();
-                image.backingRTB?.Dispose();
-                image.backingRTB = null;
-
-                Stream value = null;
-                if (e.NewValue is string rawUri)
+                Uri uri;
+                if (File.Exists(rawUri))
                 {
-                    if (rawUri == string.Empty) return;
-
-                    Uri uri;
-                    if (File.Exists(rawUri))
-                    {
-                        value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                    }
-                    //在列表中使用此方法性能极差
-                    else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
-                    {
-                        value = await GetImageAsnyc(rawUri);
-                    }
-                    else
-                    {
-                        uri = new Uri(rawUri);
-                        var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                        value = assets.Open(uri);
-                    }
-
-                    //if (suri.OriginalString.Trim().StartsWith("resm"))
-                    //{
-                    //    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    //    value = assetLocator.Open(suri);
-                    //}
+                    value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 }
-                else if (e.NewValue is Uri uri)
+                //在列表中使用此方法性能极差
+                else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
                 {
-                    if (uri.OriginalString.Trim().StartsWith("resm"))
-                    {
-                        var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                        value = assetLocator.Open(uri);
-                    }
-                }
-                else if (e.NewValue is Stream stream)
-                {
-                    value = stream;
-                }
-
-                if (value == null)
-                    return;
-
-                image.imageType = value.GetImageType();
-
-                if (image.imageType == ImageType.gif)
-                {
-                    image.gifInstance = new GifInstance();
-                    image.gifInstance.SetSource(value);
-                    if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
-                        return;
-                    image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
-                }
-                else if (image.imageType == ImageType.png)
-                {
-                    image.apngInstance = new ApngInstance();
-                    image.apngInstance.SetSource(value);
-                    if (image.apngInstance.IsSimplePNG)
-                    {
-                        image.apngInstance.Dispose();
-                        image.apngInstance = null;
-                        image.backingRTB = DecodeImage(value);
-                    }
-                    else
-                    {
-                        if (image.apngInstance.ApngPixelSize.Width < 1 || image.apngInstance.ApngPixelSize.Height < 1)
-                            return;
-                        image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
-                    }
+                    value = await GetImageAsnyc(rawUri);
                 }
                 else
                 {
-                    image.backingRTB = DecodeImage(value);
+                    uri = new Uri(rawUri);
+                    var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assets.Open(uri);
                 }
 
-                Bitmap? DecodeImage(Stream stream)
+                //if (suri.OriginalString.Trim().StartsWith("resm"))
+                //{
+                //    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                //    value = assetLocator.Open(suri);
+                //}
+            }
+            else if (e.NewValue is Uri uri)
+            {
+                if (uri.OriginalString.Trim().StartsWith("resm"))
                 {
-                    if (stream == null)
-                        return null;
+                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assetLocator.Open(uri);
+                }
+            }
+            else if (e.NewValue is Stream stream)
+            {
+                value = stream;
+            }
+
+            if (value == null)
+                return;
+
+            image.imageType = value.GetImageType();
+
+            if (image.imageType == ImageType.gif)
+            {
+                image.gifInstance = new GifInstance();
+                image.gifInstance.SetSource(value);
+                if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
+                    return;
+                image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+            }
+            else if (image.imageType == ImageType.png)
+            {
+                image.apngInstance = new ApngInstance();
+                image.apngInstance.SetSource(value);
+                if (image.apngInstance.IsSimplePNG)
+                {
+                    image.apngInstance.Dispose();
+                    image.apngInstance = null;
+                    image.backingRTB = DecodeImage(value);
+                }
+                else
+                {
+                    if (image.apngInstance.ApngPixelSize.Width < 1 || image.apngInstance.ApngPixelSize.Height < 1)
+                        return;
+                    image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
+                }
+            }
+            else
+            {
+                image.backingRTB = DecodeImage(value);
+            }
+
+            Bitmap? DecodeImage(Stream stream)
+            {
+                try
+                {
                     if (image?.DecodeWidth > 0)
                     {
                         stream.Position = 0;
@@ -313,11 +311,11 @@ namespace AvaloniaGif
                     }
                     return new Bitmap(stream);
                 }
-            }
-            catch (Exception)
-            {
-                //为了让程序不闪退无视错误
-                return;
+                catch (Exception)
+                {
+                    //为了让程序不闪退无视错误
+                    return null;
+                }
             }
         }
 
