@@ -1,4 +1,4 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
         x:Class="AvaloniaGif.Demo.MainWindow"
@@ -19,7 +19,7 @@
                       Source="{Binding Path=SelectedGif}"
                       DecodeWidth="200"
                       AutoStart="True"
-                      Stretch="Uniform"
+                      Stretch="{Binding Path=Stretch}"
                       StretchDirection="Both" />
         </Panel>
 
