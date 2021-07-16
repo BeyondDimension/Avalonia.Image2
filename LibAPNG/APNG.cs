@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace LibAPNG
 {
-    public class APNG
+    public class APNG : IDisposable
     {
-        private readonly Frame defaultImage = new Frame();
+        private Frame? defaultImage = new Frame();
         private readonly List<Frame> frames = new List<Frame>();
         private readonly MemoryStream ms;
 
@@ -16,7 +16,7 @@ namespace LibAPNG
         }
 
         public APNG(Stream stream)
-            :this(Helper.StreamToBytes(stream))
+            : this(Helper.StreamToBytes(stream))
         {
         }
 
@@ -177,5 +177,15 @@ namespace LibAPNG
         ///     Gets the acTL Chunk
         /// </summary>
         public acTLChunk acTLChunk { get; private set; }
+
+        public void Dispose()
+        {
+            defaultImage = null;
+            IHDRChunk = null;
+            acTLChunk = null;
+
+            frames.Clear();
+            ms.Dispose();
+        }
     }
 }

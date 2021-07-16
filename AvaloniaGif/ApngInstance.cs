@@ -1,4 +1,4 @@
-﻿using Avalonia.Animation;
+using Avalonia.Animation;
 using System;
 using LibAPNG;
 using System.IO;
@@ -109,7 +109,7 @@ namespace AvaloniaGif
         public void Dispose()
         {
             _isDisposed = true;
-            _bgWorker?.SendCommand(BgWorkerCommand.Pause);
+            _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
             _targetBitmap?.Dispose();
         }
     }

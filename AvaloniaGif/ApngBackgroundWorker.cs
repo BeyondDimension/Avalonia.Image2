@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -240,7 +240,7 @@ namespace AvaloniaGif
         {
             _state = BgWorkerState.Dispose;
             _shouldStop = true;
-            //_apng.Dispose();
+            _apng.Dispose();
         }
 
         private void ShowFirstFrame()
