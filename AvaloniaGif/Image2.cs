@@ -37,9 +37,9 @@ namespace AvaloniaGif
             AutoStartProperty.Changed.Subscribe(AutoStartChanged);
             DecodeWidthProperty.Changed.Subscribe(DecodeWidthChanged);
             DecodeHeightProperty.Changed.Subscribe(DecodeHeightChanged);
-            AffectsRender<Image2>(SourceProperty);
-            AffectsArrange<Image2>(SourceProperty);
-            AffectsMeasure<Image2>(SourceProperty);
+            AffectsRender<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
+            AffectsArrange<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
+            AffectsMeasure<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
         }
 
         public object Source
