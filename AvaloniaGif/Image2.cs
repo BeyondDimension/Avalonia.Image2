@@ -15,16 +15,18 @@ namespace AvaloniaGif
 {
     public class Image2 : Control
     {
-        public static readonly StyledProperty<object> SourceProperty = AvaloniaProperty.Register<Image2, object>("Source");
-        public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>("IterationCount");
-        public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>("AutoStart");
+        public static readonly StyledProperty<object> SourceProperty = AvaloniaProperty.Register<Image2, object>(nameof(Source));
+        public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>(nameof(IterationCount));
+        public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>(nameof(AutoStart));
 
-        public static readonly StyledProperty<int> DecodeWidthProperty = AvaloniaProperty.Register<Image2, int>("DecodeWidth");
-        public static readonly StyledProperty<int> DecodeHeightProperty = AvaloniaProperty.Register<Image2, int>("DecodeHeight");
+        public static readonly StyledProperty<int> DecodeWidthProperty = AvaloniaProperty.Register<Image2, int>(nameof(DecodeWidth));
+        public static readonly StyledProperty<int> DecodeHeightProperty = AvaloniaProperty.Register<Image2, int>(nameof(DecodeHeight));
 
-        public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>("StretchDirection");
-        public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>("Stretch");
-        public static readonly StyledProperty<BitmapInterpolationMode> QualityProperty = AvaloniaProperty.Register<Image2, BitmapInterpolationMode>("Quality", BitmapInterpolationMode.HighQuality);
+        public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>(nameof(StretchDirection), StretchDirection.Both);
+
+        public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch));
+
+        public static readonly StyledProperty<BitmapInterpolationMode> QualityProperty = AvaloniaProperty.Register<Image2, BitmapInterpolationMode>(nameof(Quality), BitmapInterpolationMode.HighQuality);
 
         private GifInstance? gifInstance;
         private ApngInstance? apngInstance;
