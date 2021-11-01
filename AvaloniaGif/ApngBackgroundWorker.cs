@@ -18,7 +18,7 @@ namespace AvaloniaGif
         private static readonly Stopwatch _timer = Stopwatch.StartNew();
         private APNG _apng;
         private Frame[] Frames => _apng.Frames;
-        public Bitmap CurentFrame { get; set; }
+        public Frame CurentFrame { get; set; }
 
         private Task _bgThread;
         private BgWorkerState _state;
@@ -79,7 +79,11 @@ namespace AvaloniaGif
                 // seek position is just 1 frame.
                 if (value - _currentIndex == 1)
                 {
-                    CurentFrame = new Bitmap(Frames[value].GetStream());
+                    //CurentFrame = new WriteableBitmap(new PixelSize((int)_apng.DefaultImage.fcTLChunk.Width,
+                    //      (int)_apng.DefaultImage.fcTLChunk.Height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+                    CurentFrame = Frames[value];
+
+                    //CurentFrame = new Bitmap(Frames[value].GetStream());
                     SetIndexVal(value, isManual);
                     return;
                 }
@@ -88,13 +92,13 @@ namespace AvaloniaGif
 
             for (int fI = lowerBound; fI <= value; fI++)
             {
-                var targetFrame = new Bitmap(Frames[fI].GetStream());
+                //var targetFrame = WriteableBitmap.Decode(Frames[fI].GetStream());
 
                 //// Ignore frames with restore disposal method except the current one.
                 //if (fI != value & targetFrame.FrameDisposalMethod == FrameDisposal.Restore)
                 //    continue;
 
-                CurentFrame = targetFrame;
+                CurentFrame = Frames[value];
             }
 
             SetIndexVal(value, isManual);
@@ -246,7 +250,7 @@ namespace AvaloniaGif
         private void ShowFirstFrame()
         {
             if (_shouldStop) return;
-            CurentFrame = new Bitmap(Frames[0].GetStream());
+            CurentFrame = Frames[0];
         }
 
         private void WaitAndRenderNext()
@@ -259,13 +263,14 @@ namespace AvaloniaGif
 
             _currentIndex = (_currentIndex + 1) % Frames.Length;
 
-            CurrentFrameChanged?.Invoke();
-
             var targetDelay = Frames[_currentIndex].FrameDelay;
 
             var t1 = _timer.Elapsed;
 
-            CurentFrame = new Bitmap(Frames[_currentIndex].GetStream());
+            //CurentFrame = WriteableBitmap.Decode(Frames[_currentIndex].GetStream());
+            CurentFrame = Frames[_currentIndex];
+
+            CurrentFrameChanged?.Invoke();
 
             var t2 = _timer.Elapsed;
             var delta = t2 - t1;

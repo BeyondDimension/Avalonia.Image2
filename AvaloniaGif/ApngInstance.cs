@@ -21,8 +21,9 @@ namespace AvaloniaGif
         private readonly object _bitmapSync = new();
         private APNG _apng;
         private ApngBackgroundWorker _bgWorker;
-        private Bitmap _targetBitmap;
-        private bool _hasNewFrame;
+        private WriteableBitmap _targetBitmap;
+        public Point _targetOffset;
+        public bool _hasNewFrame;
         private bool _isDisposed;
 
         public void SetSource(Stream stream)
@@ -40,7 +41,7 @@ namespace AvaloniaGif
 
             if (IsSimplePNG)
             {
-                _targetBitmap = new Bitmap(_apng.DefaultImage.GetStream());
+                _targetBitmap = WriteableBitmap.Decode(_apng.DefaultImage.GetStream());
             }
             else
             {
@@ -55,21 +56,17 @@ namespace AvaloniaGif
             }
         }
 
-        public Bitmap GetBitmap()
+        public WriteableBitmap GetBitmap()
         {
             if (_apng.IsSimplePNG)
             {
                 return _targetBitmap;
             }
 
-            Bitmap ret = null;
+            WriteableBitmap ret = null;
             lock (_bitmapSync)
             {
-                if (_hasNewFrame)
-                {
-                    _hasNewFrame = false;
-                    ret = _targetBitmap;
-                }
+                ret = _targetBitmap;
             }
             return ret;
         }
@@ -78,10 +75,13 @@ namespace AvaloniaGif
         {
             lock (_bitmapSync)
             {
-                if (_isDisposed) return;
-                _hasNewFrame = true;
-                //using var lockedBitmap = w?.Lock();
-                _targetBitmap = _bgWorker.CurentFrame;
+                if (_targetBitmap is WriteableBitmap w)
+                {
+                    if (_isDisposed) return;
+                    _hasNewFrame = _bgWorker.CurentFrame.fcTLChunk.BlendOp == BlendOps.APNGBlendOpSource;
+                    _targetOffset = new(_bgWorker.CurentFrame.fcTLChunk.XOffset, _bgWorker.CurentFrame.fcTLChunk.YOffset);
+                    _targetBitmap = WriteableBitmap.Decode(_bgWorker.CurentFrame.GetStream());
+                }
             }
         }
 

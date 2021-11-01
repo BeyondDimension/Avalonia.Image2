@@ -1,4 +1,5 @@
-﻿using Avalonia.Markup.Xaml;
+using Avalonia;
+using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using ReactiveUI;
 
@@ -10,6 +11,10 @@ namespace AvaloniaGif.Demo
         {
             AvaloniaXamlLoader.Load(this);
             this.WhenActivated(disposables => { });
+
+#if DEBUG
+            this.AttachDevTools();
+#endif
         }
     }
 }

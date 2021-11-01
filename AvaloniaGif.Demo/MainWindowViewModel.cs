@@ -10,7 +10,7 @@ namespace AvaloniaGif.Demo
         {
             Stretches = new List<Stretch>
             {
-                Stretch.None, 
+                Stretch.None,
                 Stretch.Fill,
                 Stretch.Uniform,
                 Stretch.UniformToFill
@@ -26,12 +26,14 @@ namespace AvaloniaGif.Demo
                 "resm:AvaloniaGif.Demo.Images.app.jpg",
                 "resm:AvaloniaGif.Demo.Images.t.gif",
                 "resm:AvaloniaGif.Demo.Images.avater_default.png",
-                
                 // Great shots by Vitaly Silkin, free to use:
                 // https://dribbble.com/colder/projects/219798-Loaders
-                "resm:AvaloniaGif.Demo.Images.loader.gif", 
-                "resm:AvaloniaGif.Demo.Images.evitare-loader.gif", 
-                "resm:AvaloniaGif.Demo.Images.c-loader.gif"
+                "resm:AvaloniaGif.Demo.Images.loader.gif",
+                "resm:AvaloniaGif.Demo.Images.evitare-loader.gif",
+                "resm:AvaloniaGif.Demo.Images.c-loader.gif",
+                "resm:AvaloniaGif.Demo.Images.69060e4e568c52eef85883be8e7050f7.png",
+                "resm:AvaloniaGif.Demo.Images.apng_spinfox.png",
+                "https://steamcdn-a.akamaihd.net/steam/apps/364210/header.jpg",
             };
         }
 
@@ -48,7 +50,7 @@ namespace AvaloniaGif.Demo
             get => _selectedGif;
             set => this.RaiseAndSetIfChanged(ref _selectedGif, value);
         }
-        
+
         private IReadOnlyList<Stretch> _stretches;
         public IReadOnlyList<Stretch> Stretches
         {

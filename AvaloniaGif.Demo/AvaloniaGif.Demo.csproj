@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="Images\3390_library_600x900.jpg" />
+    <None Remove="Images\69060e4e568c52eef85883be8e7050f7.png" />
+    <None Remove="Images\apng_spinfox.png" />
     <None Remove="Images\app.gif" />
     <None Remove="Images\app.jpg" />
     <None Remove="Images\avater_default.png" />
@@ -23,13 +25,16 @@
     <None Remove="Images\t.gif" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Images\69060e4e568c52eef85883be8e7050f7.png" />
+    <EmbeddedResource Include="Images\apng_spinfox.png" />
     <EmbeddedResource Include="Images\avater_default.png" />
     <EmbeddedResource Include="Images\library_hero.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.10.6" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.6" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.6" />
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.ReactiveUI" />
+    <PackageReference Include="Avalonia.Diagnostics" />
     <ProjectReference Include="..\AvaloniaGif\AvaloniaGif.csproj" />
   </ItemGroup>
   <ItemGroup>

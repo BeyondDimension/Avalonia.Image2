@@ -122,7 +122,7 @@ namespace AvaloniaGif
         {
             void RenderBitmap(Bitmap bitmap)
             {
-                if (bitmap is not null && Bounds.Width > 0 && Bounds.Height > 0)
+                if (bitmap is not null && IsVisible && Bounds.Width > 0 && Bounds.Height > 0)
                 {
                     var viewPort = new Rect(Bounds.Size);
                     var sourceSize = bitmap.Size;
@@ -149,22 +149,45 @@ namespace AvaloniaGif
                     {
                         using var ctx = b.CreateDrawingContext(null);
                         var ts = new Rect(source.Size);
-                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
+                        //ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
+                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts, Quality);
                         RenderBitmap(b);
+                        Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
+                        return;
                     }
+                    RenderBitmap(backingRTB);
                 }
-                else if (imageType == ImageType.png)
+                else if (imageType == ImageType.png && !apngInstance.IsSimplePNG)
                 {
-                    if (apngInstance?.GetBitmap() is Bitmap source && b is not null)
+                    if (apngInstance?.GetBitmap() is WriteableBitmap source && b is not null)
                     {
                         using var ctx = b.CreateDrawingContext(null);
-                        var ts = new Rect(source.Size);
-                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
+                        var ts = new Rect(b.Size);
+                        var ns = new Rect(apngInstance._targetOffset, source.Size);
+                        //ctx.DrawRectangle(Brushes.Black, null, new Rect(0, 0, apngInstance.ApngPixelSize.Width, apngInstance.ApngPixelSize.Height));
+
+                        if (apngInstance._hasNewFrame)
+                        {
+                            ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
+                            //ctx.Clear(Colors.Transparent);
+                            ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
+                        }
+                        else
+                        {
+                            ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
+                            ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
+                        }
+
                         RenderBitmap(b);
+                        Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
+                        return;
                     }
                 }
-                RenderBitmap(backingRTB);
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+                else
+                {
+                    RenderBitmap(backingRTB);
+                }
+                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                 return;
             }
 
@@ -206,7 +229,7 @@ namespace AvaloniaGif
             }
         }
 
-        private async static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
+        private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as Image2;
             if (image == null)
@@ -232,7 +255,16 @@ namespace AvaloniaGif
                 //在列表中使用此方法性能极差
                 else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
                 {
-                    value = await GetImageAsnyc(rawUri);
+                    Task.Run(async () =>
+                    {
+                        value = await GetImageAsnyc(rawUri);
+
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            image.Source = value;
+                        });
+                    });
+                    return;
                 }
                 else
                 {
@@ -272,8 +304,9 @@ namespace AvaloniaGif
                 if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
                     return;
                 image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+                return;
             }
-            else if (image.imageType == ImageType.png)
+            if (image.imageType == ImageType.png)
             {
                 image.apngInstance = new ApngInstance();
                 image.apngInstance.SetSource(value);
@@ -289,11 +322,9 @@ namespace AvaloniaGif
                         return;
                     image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
                 }
+                return;
             }
-            else
-            {
-                image.backingRTB = DecodeImage(value);
-            }
+            image.backingRTB = DecodeImage(value);
 
             Bitmap? DecodeImage(Stream stream)
             {
@@ -324,8 +355,7 @@ namespace AvaloniaGif
         {
             using var web = new WebClient();
             var bt = await web.DownloadDataTaskAsync(uri);
-            using var stream = new MemoryStream(bt);
-            return stream;
+            return new MemoryStream(bt);
         }
     }
 }
