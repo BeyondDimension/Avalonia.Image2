@@ -302,7 +302,15 @@ namespace AvaloniaGif
                 }
             }
 
-            value = ResolveObjectToStream(e.NewValue, image);
+            if (e.NewValue is Bitmap bitmap)
+            {
+                image.backingRTB = bitmap;
+            }
+            else
+            {
+                value = ResolveObjectToStream(e.NewValue, image);
+            }
+
             if (value == null)
                 return;
 
