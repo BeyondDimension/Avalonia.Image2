@@ -16,7 +16,11 @@ namespace AvaloniaGif
     public class Image2 : Control
     {
         public static readonly StyledProperty<object> SourceProperty = AvaloniaProperty.Register<Image2, object>(nameof(Source));
+
+        public static readonly StyledProperty<object> FallbackSourceProperty = AvaloniaProperty.Register<Image2, object>(nameof(FallbackSource));
+
         public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>(nameof(IterationCount));
+
         public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>(nameof(AutoStart));
 
         public static readonly StyledProperty<int> DecodeWidthProperty = AvaloniaProperty.Register<Image2, int>(nameof(DecodeWidth));
@@ -48,6 +52,12 @@ namespace AvaloniaGif
         {
             get => GetValue(SourceProperty);
             set => SetValue(SourceProperty, value);
+        }
+
+        public object FallbackSource
+        {
+            get => GetValue(FallbackSourceProperty);
+            set => SetValue(FallbackSourceProperty, value);
         }
 
         public IterationCount IterationCount
@@ -118,6 +128,33 @@ namespace AvaloniaGif
             var image = e.Sender as Image2;
             if (image == null)
                 return;
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            if (apngInstance != null)
+            {
+                apngInstance.Run();
+            }
+            else if (gifInstance != null)
+            {
+                gifInstance.Run();
+            }
+
+            base.OnAttachedToVisualTree(e);
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            if (apngInstance != null)
+            {
+                apngInstance.Pause();
+            }
+            else if (gifInstance != null)
+            {
+                gifInstance.Pause();
+            }
+            base.OnDetachedFromVisualTree(e);
         }
 
         public override void Render(DrawingContext context)
@@ -244,58 +281,17 @@ namespace AvaloniaGif
             image.backingRTB?.Dispose();
             image.backingRTB = null;
 
-            Stream value = null;
-            if (e.NewValue is string rawUri)
-            {
-                if (rawUri == string.Empty) return;
-
-                Uri uri;
-                if (File.Exists(rawUri))
-                {
-                    value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                }
-                //在列表中使用此方法性能极差
-                else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
-                {
-                    Task.Run(async () =>
-                    {
-                        value = await GetImageAsnyc(rawUri);
-
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            image.Source = value;
-                        });
-                    });
-                    return;
-                }
-                else
-                {
-                    uri = new Uri(rawUri);
-                    var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    value = assets.Open(uri);
-                }
-
-                //if (suri.OriginalString.Trim().StartsWith("resm"))
-                //{
-                //    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                //    value = assetLocator.Open(suri);
-                //}
-            }
-            else if (e.NewValue is Uri uri)
-            {
-                if (uri.OriginalString.Trim().StartsWith("resm"))
-                {
-                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    value = assetLocator.Open(uri);
-                }
-            }
-            else if (e.NewValue is Stream stream)
-            {
-                value = stream;
-            }
+            Stream value = ResolveObjectToStream(e.NewValue, image);
 
             if (value == null)
+            {
+                if (image.FallbackSource != null)
+                {
+                    value = ResolveObjectToStream(e.NewValue, image);
+                    image.backingRTB = image.DecodeImage(value);
+                }
                 return;
+            }
 
             image.imageType = value.GetImageType();
 
@@ -316,7 +312,7 @@ namespace AvaloniaGif
                 {
                     image.apngInstance.Dispose();
                     image.apngInstance = null;
-                    image.backingRTB = DecodeImage(value);
+                    image.backingRTB = image.DecodeImage(value);
                 }
                 else
                 {
@@ -326,32 +322,88 @@ namespace AvaloniaGif
                 }
                 return;
             }
-            image.backingRTB = DecodeImage(value);
-
-            Bitmap? DecodeImage(Stream stream)
-            {
-                try
-                {
-                    if (image?.DecodeWidth > 0)
-                    {
-                        stream.Position = 0;
-                        return Bitmap.DecodeToWidth(stream, image.DecodeWidth, image.Quality);
-                    }
-                    else if (image?.DecodeHeight > 0)
-                    {
-                        stream.Position = 0;
-                        return Bitmap.DecodeToHeight(stream, image.DecodeHeight, image.Quality);
-                    }
-                    return new Bitmap(stream);
-                }
-                catch (Exception)
-                {
-                    //为了让程序不闪退无视错误
-                    return null;
-                }
-            }
+            image.backingRTB = image.DecodeImage(value);
         }
 
+        private static Stream ResolveObjectToStream(object obj, Image2 img)
+        {
+            Stream value = null;
+            if (obj is string rawUri)
+            {
+                if (rawUri == string.Empty) return null;
+
+                Uri uri;
+                if (File.Exists(rawUri))
+                {
+                    value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                }
+                else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
+                {
+                    Task.Run(async () =>
+                    {
+                        value = await GetImageAsnyc(rawUri);
+
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            img.Source = value;
+                        });
+                    });
+                    return null;
+                }
+                else
+                {
+                    uri = new Uri(rawUri);
+                    var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assets.Open(uri);
+                }
+
+                //if (suri.OriginalString.Trim().StartsWith("resm"))
+                //{
+                //    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                //    value = assetLocator.Open(suri);
+                //}
+            }
+            else if (obj is Uri uri)
+            {
+                if (uri.OriginalString.Trim().StartsWith("resm"))
+                {
+                    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                    value = assetLocator.Open(uri);
+                }
+            }
+            else if (obj is Stream stream)
+            {
+                value = stream;
+            }
+
+            if (value == null)
+                return null;
+
+            return value;
+        }
+
+        private Bitmap? DecodeImage(Stream stream)
+        {
+            try
+            {
+                if (DecodeWidth > 0)
+                {
+                    stream.Position = 0;
+                    return Bitmap.DecodeToWidth(stream, DecodeWidth, Quality);
+                }
+                else if (DecodeHeight > 0)
+                {
+                    stream.Position = 0;
+                    return Bitmap.DecodeToHeight(stream, DecodeHeight, Quality);
+                }
+                return new Bitmap(stream);
+            }
+            catch (Exception)
+            {
+                //为了让程序不闪退无视错误
+                return null;
+            }
+        }
 
         private static async Task<Stream> GetImageAsnyc(string uri)
         {

@@ -84,12 +84,17 @@ namespace AvaloniaGif
             }
         }
 
-        private void Run()
+        public void Run()
         {
             if (!Stream.CanSeek)
                 throw new ArgumentException("The stream is not seekable");
 
             _bgWorker?.SendCommand(BgWorkerCommand.Play);
+        }
+
+        public void Pause()
+        {
+            _bgWorker?.SendCommand(BgWorkerCommand.Pause);
         }
 
         public void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
