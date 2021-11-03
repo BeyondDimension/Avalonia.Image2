@@ -132,7 +132,7 @@ namespace AvaloniaGif
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
-            if (FallbackSource != null && Source == null)
+            if (FallbackSource != null && Source == null && backingRTB == null)
             {
                 var value = ResolveObjectToStream(FallbackSource, this);
                 if (value != null)

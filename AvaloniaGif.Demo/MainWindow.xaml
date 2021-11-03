@@ -15,16 +15,35 @@
           <ListBox SelectedItem="{Binding Path=SelectedGif}"
                    Items="{Binding Path=AvailableGifs}" />
         </StackPanel>
-        <Panel Grid.Column="1">
-          <TextBlock Text="透明测试" FontSize="50" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
-          <gif:Image2
-                    Source="{Binding Path=SelectedGif}"
-                    DecodeWidth="200"
-                    AutoStart="True"
-                    Stretch="{Binding Path=Stretch}"
-                    StretchDirection="Both" 
-                    FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
-        </Panel>
+        <ScrollViewer Grid.Column="1">
+          <StackPanel Spacing="20">
+            <Panel>
+              <TextBlock Text="透明测试" FontSize="50" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
+              <gif:Image2
+                        Source="{Binding Path=SelectedGif}"
+                        DecodeWidth="200"
+                        AutoStart="True"
+                        Stretch="{Binding Path=Stretch}"
+                        StretchDirection="Both"
+                        FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
+            </Panel>
+            <gif:Image2
+                      AutoStart="True"
+                      Stretch="{Binding Path=Stretch}"
+                      StretchDirection="Both"
+                      FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
+            <gif:Image2
+                      AutoStart="True"
+                      Stretch="{Binding Path=Stretch}"
+                      StretchDirection="Both"
+                      FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
+            <gif:Image2
+                      AutoStart="True"
+                      Stretch="{Binding Path=Stretch}"
+                      StretchDirection="Both"
+                      FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
+          </StackPanel>
+        </ScrollViewer>
       </Grid>
     </TabItem>
 
