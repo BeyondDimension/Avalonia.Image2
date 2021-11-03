@@ -132,6 +132,16 @@ namespace AvaloniaGif
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
+            if (FallbackSource != null && Source == null)
+            {
+                var value = ResolveObjectToStream(FallbackSource, this);
+                if (value != null)
+                {
+                    backingRTB = DecodeImage(value);
+                    value.Dispose();
+                }
+            }
+
             if (apngInstance != null)
             {
                 apngInstance.Run();
@@ -140,7 +150,6 @@ namespace AvaloniaGif
             {
                 gifInstance.Run();
             }
-
             base.OnAttachedToVisualTree(e);
         }
 
@@ -177,6 +186,8 @@ namespace AvaloniaGif
 
                     var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
                     context.DrawImage(bitmap, sourceRect, destRect, interpolationMode);
+
+                    Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                 }
             }
 
@@ -191,7 +202,6 @@ namespace AvaloniaGif
                         //ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
                         ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts, Quality);
                         RenderBitmap(b);
-                        Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                         return;
                     }
                     RenderBitmap(backingRTB);
@@ -218,7 +228,6 @@ namespace AvaloniaGif
                         }
 
                         RenderBitmap(b);
-                        Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                         return;
                     }
                 }
@@ -226,7 +235,6 @@ namespace AvaloniaGif
                 {
                     RenderBitmap(backingRTB);
                 }
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                 return;
             }
 
@@ -281,17 +289,22 @@ namespace AvaloniaGif
             image.backingRTB?.Dispose();
             image.backingRTB = null;
 
-            Stream value = ResolveObjectToStream(e.NewValue, image);
+            Stream value = null;
 
-            if (value == null)
+            if (image.FallbackSource != null)
             {
-                if (image.FallbackSource != null)
+                value = ResolveObjectToStream(image.FallbackSource, image);
+                if (value != null)
                 {
-                    value = ResolveObjectToStream(e.NewValue, image);
                     image.backingRTB = image.DecodeImage(value);
+                    value.Dispose();
+                    value = null;
                 }
-                return;
             }
+
+            value = ResolveObjectToStream(e.NewValue, image);
+            if (value == null)
+                return;
 
             image.imageType = value.GetImageType();
 
@@ -354,7 +367,10 @@ namespace AvaloniaGif
                 {
                     uri = new Uri(rawUri);
                     var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    value = assets.Open(uri);
+                    if (assets.Exists(uri))
+                    {
+                        value = assets.Open(uri);
+                    }
                 }
 
                 //if (suri.OriginalString.Trim().StartsWith("resm"))
@@ -368,7 +384,10 @@ namespace AvaloniaGif
                 if (uri.OriginalString.Trim().StartsWith("resm"))
                 {
                     var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                    value = assetLocator.Open(uri);
+                    if (assetLocator.Exists(uri))
+                    {
+                        value = assetLocator.Open(uri);
+                    }
                 }
             }
             else if (obj is Stream stream)

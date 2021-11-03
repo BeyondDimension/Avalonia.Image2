@@ -22,7 +22,8 @@
                     DecodeWidth="200"
                     AutoStart="True"
                     Stretch="{Binding Path=Stretch}"
-                    StretchDirection="Both" />
+                    StretchDirection="Both" 
+                    FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
         </Panel>
       </Grid>
     </TabItem>

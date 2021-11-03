@@ -17,6 +17,7 @@ namespace AvaloniaGif.Demo
             };
             AvailableGifs = new List<string>
             {
+                "resm:AvaloniaGif.Demo.Images.no.png",
                 "resm:AvaloniaGif.Demo.Images.laundry.gif",
                 "resm:AvaloniaGif.Demo.Images.earth.gif",
                 "resm:AvaloniaGif.Demo.Images.rainbow.gif",
