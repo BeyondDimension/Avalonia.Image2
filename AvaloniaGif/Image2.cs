@@ -291,23 +291,24 @@ namespace AvaloniaGif
 
             Stream value = null;
 
-            if (image.FallbackSource != null)
-            {
-                value = ResolveObjectToStream(image.FallbackSource, image);
-                if (value != null)
-                {
-                    image.backingRTB = image.DecodeImage(value);
-                    value.Dispose();
-                    value = null;
-                }
-            }
-
             if (e.NewValue is Bitmap bitmap)
             {
                 image.backingRTB = bitmap;
+                return;
             }
             else
             {
+                if (image.FallbackSource != null)
+                {
+                    value = ResolveObjectToStream(image.FallbackSource, image);
+                    if (value != null)
+                    {
+                        image.backingRTB = image.DecodeImage(value);
+                        value.Dispose();
+                        value = null;
+                    }
+                }
+
                 value = ResolveObjectToStream(e.NewValue, image);
             }
 
