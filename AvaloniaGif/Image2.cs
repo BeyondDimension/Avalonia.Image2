@@ -285,7 +285,9 @@ namespace AvaloniaGif
                 return;
 
             image.gifInstance?.Dispose();
+            image.gifInstance = null;
             image.apngInstance?.Dispose();
+            image.apngInstance = null;
             image.backingRTB?.Dispose();
             image.backingRTB = null;
 
@@ -347,7 +349,7 @@ namespace AvaloniaGif
             image.backingRTB = image.DecodeImage(value);
         }
 
-        private static Stream ResolveObjectToStream(object obj, Image2 img)
+        private static Stream? ResolveObjectToStream(object obj, Image2 img)
         {
             Stream value = null;
             if (obj is string rawUri)
