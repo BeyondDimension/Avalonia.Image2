@@ -10,6 +10,8 @@ using Avalonia.Platform;
 using System.Net;
 using Avalonia.Visuals.Media.Imaging;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Application.Services;
 
 namespace AvaloniaGif
 {
@@ -416,6 +418,9 @@ namespace AvaloniaGif
         {
             try
             {
+                if (stream == null)
+                    return null;
+
                 if (DecodeWidth > 0)
                 {
                     stream.Position = 0;
@@ -435,11 +440,14 @@ namespace AvaloniaGif
             }
         }
 
-        private static async Task<Stream> GetImageAsnyc(string uri)
+        private static async Task<Stream> GetImageAsnyc(string url)
         {
-            using var web = new WebClient();
-            var bt = await web.DownloadDataTaskAsync(uri);
-            return new MemoryStream(bt);
+            var stream = await IHttpService.Instance.GetAsync<Stream>(url, MediaTypeNames.All);
+            if (stream == null) return null;
+            var s = new MemoryStream();
+            stream.CopyTo(s);
+            stream.Dispose();
+            return s;
         }
     }
 }

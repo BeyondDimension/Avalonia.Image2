@@ -8,6 +8,7 @@
 		<PackageReference Include="Avalonia" />
 	</ItemGroup>
 	<ItemGroup>
+	  <ProjectReference Include="..\..\..\src\Common.CoreLib\Common.CoreLib.csproj" />
 	  <ProjectReference Include="..\LibAPNG\LibAPNG.csproj" />
 	</ItemGroup>
   <ItemGroup Condition=" Exists('$(MSBuildProjectDirectory)\..\..\..\src\Common.CoreLib\Properties\ThisAssembly.Version.cs') ">
