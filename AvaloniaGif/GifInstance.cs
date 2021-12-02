@@ -25,7 +25,6 @@ namespace AvaloniaGif
 
 
         bool _streamCanDispose;
-        private readonly object _bitmapSync = new();
         private GifDecoder _gifDecoder;
         private GifBackgroundWorker _bgWorker;
         private WriteableBitmap _targetBitmap;
@@ -59,28 +58,23 @@ namespace AvaloniaGif
         public WriteableBitmap GetBitmap()
         {
             WriteableBitmap ret = null;
-            lock (_bitmapSync)
+            if (_hasNewFrame)
             {
-                if (_hasNewFrame)
-                {
-                    _hasNewFrame = false;
-                    ret = _targetBitmap;
-                }
+                _hasNewFrame = false;
+                ret = _targetBitmap;
             }
             return ret;
         }
 
         private void FrameChanged()
         {
-            lock (_bitmapSync)
+            if (_targetBitmap is WriteableBitmap w)
             {
-                if (_targetBitmap is WriteableBitmap w)
-                {
-                    if (_isDisposed) return;
-                    _hasNewFrame = true;
-                    using var lockedBitmap = w?.Lock();
-                    _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
-                }
+                if (_isDisposed) return;
+                _hasNewFrame = true;
+
+                using var lockedBitmap = w?.Lock();
+                _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
             }
         }
 
