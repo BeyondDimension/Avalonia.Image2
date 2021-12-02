@@ -12,6 +12,7 @@ using Avalonia.Visuals.Media.Imaging;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Application.Services;
+using Avalonia.Metadata;
 
 namespace AvaloniaGif
 {
@@ -21,7 +22,7 @@ namespace AvaloniaGif
 
         public static readonly StyledProperty<object> FallbackSourceProperty = AvaloniaProperty.Register<Image2, object>(nameof(FallbackSource));
 
-        public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>(nameof(IterationCount));
+        //public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>(nameof(IterationCount));
 
         public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>(nameof(AutoStart));
 
@@ -36,12 +37,12 @@ namespace AvaloniaGif
 
         private GifInstance? gifInstance;
         private ApngInstance? apngInstance;
-        private Bitmap? backingRTB;
+        private IBitmap? backingRTB;
         private ImageType imageType;
         static Image2()
         {
             SourceProperty.Changed.Subscribe(SourceChanged);
-            IterationCountProperty.Changed.Subscribe(IterationCountChanged);
+            //IterationCountProperty.Changed.Subscribe(IterationCountChanged);
             AutoStartProperty.Changed.Subscribe(AutoStartChanged);
             DecodeWidthProperty.Changed.Subscribe(DecodeWidthChanged);
             DecodeHeightProperty.Changed.Subscribe(DecodeHeightChanged);
@@ -50,6 +51,7 @@ namespace AvaloniaGif
             AffectsMeasure<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
         }
 
+        [Content]
         public object Source
         {
             get => GetValue(SourceProperty);
@@ -62,11 +64,11 @@ namespace AvaloniaGif
             set => SetValue(FallbackSourceProperty, value);
         }
 
-        public IterationCount IterationCount
-        {
-            get => GetValue(IterationCountProperty);
-            set => SetValue(IterationCountProperty, value);
-        }
+        //public IterationCount IterationCount
+        //{
+        //    get => GetValue(IterationCountProperty);
+        //    set => SetValue(IterationCountProperty, value);
+        //}
 
         public bool AutoStart
         {
@@ -170,7 +172,7 @@ namespace AvaloniaGif
 
         public override void Render(DrawingContext context)
         {
-            void RenderBitmap(Bitmap bitmap)
+            void RenderBitmap(IImage bitmap)
             {
                 if (bitmap is not null && IsVisible && Bounds.Width > 0 && Bounds.Height > 0)
                 {
@@ -186,10 +188,8 @@ namespace AvaloniaGif
                     var sourceRect = new Rect(sourceSize)
                         .CenterRect(new Rect(destRect.Size / scale));
 
-                    var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-                    context.DrawImage(bitmap, sourceRect, destRect, interpolationMode);
-
-                    Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
+                    //var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+                    context.DrawImage(bitmap, sourceRect, destRect, Quality);
                 }
             }
 
@@ -201,12 +201,8 @@ namespace AvaloniaGif
                     {
                         using var ctx = b.CreateDrawingContext(null);
                         var ts = new Rect(source.Size);
-                        //ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
                         ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts, Quality);
-                        RenderBitmap(b);
-                        return;
                     }
-                    RenderBitmap(backingRTB);
                 }
                 else if (imageType == ImageType.png && !apngInstance.IsSimplePNG)
                 {
@@ -228,19 +224,12 @@ namespace AvaloniaGif
                             ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
                             ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
                         }
-
-                        RenderBitmap(b);
-                        return;
                     }
                 }
-                else
-                {
-                    RenderBitmap(backingRTB);
-                }
-                return;
             }
 
             RenderBitmap(backingRTB);
+            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -281,6 +270,7 @@ namespace AvaloniaGif
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
             var image = e.Sender as Image2;
+
             if (image == null)
                 return;
             if (e.NewValue == null)

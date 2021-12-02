@@ -1,53 +1,42 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
-        x:Class="AvaloniaGif.Demo.MainWindow"
-        Title="GIFs on Avalonia!"
-        WindowStartupLocation="CenterScreen"
-        Height="480" Width="680"
-        Background="White">
-  <TabControl>
-    <TabItem Header="Test1">
-      <Grid ColumnDefinitions="2*, 3*">
-        <StackPanel Grid.Column="0">
-          <ComboBox SelectedItem="{Binding Path=Stretch}"
-                    Items="{Binding Path=Stretches}" />
-          <ListBox SelectedItem="{Binding Path=SelectedGif}"
-                   Items="{Binding Path=AvailableGifs}" />
-        </StackPanel>
-        <ScrollViewer Grid.Column="1">
-          <StackPanel Spacing="20">
-            <Panel>
-              <TextBlock Text="透明测试" FontSize="50" HorizontalAlignment="Center" VerticalAlignment="Center"></TextBlock>
-              <gif:Image2
-                        Source="{Binding Path=SelectedGif}"
-                        DecodeWidth="200"
-                        AutoStart="True"
-                        Stretch="{Binding Path=Stretch}"
-                        StretchDirection="Both"
-                        FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
-            </Panel>
-            <gif:Image2
-                      AutoStart="True"
-                      Stretch="{Binding Path=Stretch}"
-                      StretchDirection="Both"
-                      FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
-            <gif:Image2
-                      AutoStart="True"
-                      Stretch="{Binding Path=Stretch}"
-                      StretchDirection="Both"
-                      FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
-            <gif:Image2
-                      AutoStart="True"
-                      Stretch="{Binding Path=Stretch}"
-                      StretchDirection="Both"
-                      FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"/>
-          </StackPanel>
-        </ScrollViewer>
-      </Grid>
-    </TabItem>
+<Window
+    x:Class="AvaloniaGif.Demo.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
+    Title="GIFs on Avalonia!"
+    Width="680"
+    Height="480"
+    Background="White"
+    WindowStartupLocation="CenterScreen">
+    <TabControl>
+        <TabItem Header="Test1">
+            <Grid ColumnDefinitions="2*, 3*">
+                <StackPanel Grid.Column="0">
+                    <ComboBox Items="{Binding Path=Stretches}" SelectedItem="{Binding Path=Stretch}" />
+                    <ListBox Items="{Binding Path=AvailableGifs}" SelectedItem="{Binding Path=SelectedGif}" />
+                </StackPanel>
+                <ScrollViewer Grid.Column="1">
+                    <StackPanel Spacing="20">
+                        <Panel>
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="50"
+                                Text="透明测试" />
+                            <gif:Image2
+                                AutoStart="True"
+                                DecodeWidth="200"
+                                FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"
+                                Source="{Binding Path=SelectedGif}"
+                                Stretch="{Binding Path=Stretch}"
+                                StretchDirection="Both" />
+                        </Panel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
 
-    <TabItem Header="Test2"/>
-  </TabControl>
+        <TabItem Header="Test2" />
+    </TabControl>
 
 </Window>
