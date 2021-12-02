@@ -136,7 +136,7 @@ namespace AvaloniaGif
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
         {
-            if (FallbackSource != null && Source == null && backingRTB == null)
+            if (FallbackSource != null && backingRTB == null)
             {
                 var value = ResolveObjectToStream(FallbackSource, this);
                 if (value != null)
@@ -271,17 +271,17 @@ namespace AvaloniaGif
         {
             var image = e.Sender as Image2;
 
-            if (image == null)
-                return;
-            if (e.NewValue == null)
-                return;
-
             image.gifInstance?.Dispose();
             image.gifInstance = null;
             image.apngInstance?.Dispose();
             image.apngInstance = null;
             image.backingRTB?.Dispose();
             image.backingRTB = null;
+
+            if (image == null && image.FallbackSource == null)
+                return;
+            if (e.NewValue == null && image.FallbackSource == null)
+                return;
 
             Stream value = null;
 
