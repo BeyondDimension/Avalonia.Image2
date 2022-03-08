@@ -35,6 +35,9 @@ namespace AvaloniaGif.Demo
                 "resm:AvaloniaGif.Demo.Images.69060e4e568c52eef85883be8e7050f7.png",
                 "resm:AvaloniaGif.Demo.Images.apng_spinfox.png",
                 "https://steamcdn-a.akamaihd.net/steam/apps/364210/header.jpg",
+                "resm:AvaloniaGif.Demo.Images.866256673c521a3935be83765326ae43327b4cb5.gif",
+                "resm:AvaloniaGif.Demo.Images.866256673c521a3935be83765326ae43327b4cb5.png",
+                "resm:AvaloniaGif.Demo.Images.d466feaada5718256f592b789651b13fec009a90.gif",
             };
         }
 

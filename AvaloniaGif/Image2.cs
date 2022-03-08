@@ -203,6 +203,9 @@ namespace AvaloniaGif
                         var ts = new Rect(source.Size);
                         ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts, Quality);
                     }
+                    RenderBitmap(backingRTB);
+                    Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
+                    return;
                 }
                 else if (imageType == ImageType.png && !apngInstance.IsSimplePNG)
                 {
@@ -225,11 +228,13 @@ namespace AvaloniaGif
                             ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
                         }
                     }
+                    RenderBitmap(backingRTB);
+                    Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
+                    return;
                 }
             }
 
             RenderBitmap(backingRTB);
-            Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -362,7 +367,7 @@ namespace AvaloniaGif
                         Dispatcher.UIThread.Post(() =>
                         {
                             img.Source = value;
-                        });
+                        }, DispatcherPriority.Render);
                     });
                     return null;
                 }
