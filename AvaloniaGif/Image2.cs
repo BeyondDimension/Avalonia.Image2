@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.Application.Services;
 using Avalonia.Metadata;
+using Avalonia.Utilities;
 
 namespace AvaloniaGif
 {
@@ -413,7 +414,7 @@ namespace AvaloniaGif
         {
             try
             {
-                if (stream == null)
+                if (stream == null || stream.CanRead == false || stream.Length == 0)
                     return null;
 
                 if (DecodeWidth > 0)
@@ -426,10 +427,13 @@ namespace AvaloniaGif
                     stream.Position = 0;
                     return Bitmap.DecodeToHeight(stream, DecodeHeight, Quality);
                 }
+
+                //https://github.com/mono/SkiaSharp/issues/1551
                 return new Bitmap(stream);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Error(typeof(Image2).FullName, ex, nameof(DecodeImage));
                 //为了让程序不闪退无视错误
                 return null;
             }
