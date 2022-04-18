@@ -363,8 +363,9 @@ namespace AvaloniaGif
                 {
                     Task.Run(async () =>
                     {
-                        value = await GetImageAsnyc(rawUri);
-
+                        value = await IHttpService.Instance.GetImageStreamAsync(rawUri);
+                        if (value == null)
+                            return;
                         Dispatcher.UIThread.Post(() =>
                         {
                             img.Source = value;
@@ -437,16 +438,6 @@ namespace AvaloniaGif
                 //为了让程序不闪退无视错误
                 return null;
             }
-        }
-
-        private static async Task<Stream> GetImageAsnyc(string url)
-        {
-            var stream = await IHttpService.Instance.GetAsync<Stream>(url, MediaTypeNames.All);
-            if (stream == null) return null;
-            var s = new MemoryStream();
-            stream.CopyTo(s);
-            stream.Dispose();
-            return s;
         }
     }
 }
