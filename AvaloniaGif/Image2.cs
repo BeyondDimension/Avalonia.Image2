@@ -14,6 +14,9 @@ using System.Net.Http;
 using System.Application.Services;
 using Avalonia.Metadata;
 using Avalonia.Utilities;
+using System.Application;
+
+#nullable enable
 
 namespace AvaloniaGif
 {
@@ -109,29 +112,25 @@ namespace AvaloniaGif
 
         private static void DecodeWidthChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image2;
-            if (image == null)
+            if (e.Sender is not Image2)
                 return;
         }
 
         private static void DecodeHeightChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image2;
-            if (image == null)
+            if (e.Sender is not Image2)
                 return;
         }
 
         private static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image2;
-            if (image == null)
+            if (e.Sender is not Image2)
                 return;
         }
 
         private static void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image2;
-            if (image == null)
+            if (e.Sender is not Image2)
                 return;
         }
 
@@ -173,7 +172,7 @@ namespace AvaloniaGif
 
         public override void Render(DrawingContext context)
         {
-            void RenderBitmap(IImage bitmap)
+            void RenderBitmap(IImage? bitmap)
             {
                 if (bitmap is not null && IsVisible && Bounds.Width > 0 && Bounds.Height > 0)
                 {
@@ -208,9 +207,9 @@ namespace AvaloniaGif
                     Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                     return;
                 }
-                else if (imageType == ImageType.png && !apngInstance.IsSimplePNG)
+                else if (imageType == ImageType.png && apngInstance != null && !apngInstance.IsSimplePNG)
                 {
-                    if (apngInstance?.GetBitmap() is WriteableBitmap source && b is not null)
+                    if (apngInstance.GetBitmap() is WriteableBitmap source && b is not null)
                     {
                         using var ctx = b.CreateDrawingContext(null);
                         var ts = new Rect(b.Size);
@@ -275,7 +274,8 @@ namespace AvaloniaGif
 
         private static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
         {
-            var image = e.Sender as Image2;
+            if (e.Sender is not Image2 image)
+                return;
 
             image.gifInstance?.Dispose();
             image.gifInstance = null;
@@ -284,13 +284,10 @@ namespace AvaloniaGif
             image.backingRTB?.Dispose();
             image.backingRTB = null;
 
-            if (image == null && image.FallbackSource == null)
-                return;
             if (e.NewValue == null && image.FallbackSource == null)
                 return;
 
-            Stream value = null;
-
+            Stream? value;
             if (e.NewValue is Bitmap bitmap)
             {
                 image.backingRTB = bitmap;
@@ -305,7 +302,6 @@ namespace AvaloniaGif
                     {
                         image.backingRTB = image.DecodeImage(value);
                         value.Dispose();
-                        value = null;
                     }
                 }
 
@@ -347,9 +343,9 @@ namespace AvaloniaGif
             image.backingRTB = image.DecodeImage(value);
         }
 
-        private static Stream? ResolveObjectToStream(object obj, Image2 img)
+        private static Stream? ResolveObjectToStream(object? obj, Image2 img)
         {
-            Stream value = null;
+            Stream? value = null;
             if (obj is string rawUri)
             {
                 if (rawUri == string.Empty) return null;
@@ -359,7 +355,7 @@ namespace AvaloniaGif
                 {
                     value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                 }
-                else if (rawUri.StartsWith("http://") || rawUri.StartsWith("https://"))
+                else if (Browser2.IsHttpUrl(rawUri))
                 {
                     Task.Run(async () =>
                     {
@@ -434,8 +430,8 @@ namespace AvaloniaGif
             }
             catch (Exception ex)
             {
-                Log.Error(typeof(Image2).FullName, ex, nameof(DecodeImage));
-                //为了让程序不闪退无视错误
+                Log.Error(nameof(Image2), ex, nameof(DecodeImage));
+                // 为了让程序不闪退无视错误
                 return null;
             }
         }

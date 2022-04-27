@@ -1,16 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
-		<LangVersion>latest</LangVersion> 
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Avalonia" />
-	</ItemGroup>
-	<ItemGroup>
-	  <ProjectReference Include="..\..\..\src\Common.CoreLib\Common.CoreLib.csproj" />
-	  <ProjectReference Include="..\LibAPNG\LibAPNG.csproj" />
-	</ItemGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Common.CoreLib\Common.CoreLib.csproj" />
+    <ProjectReference Include="..\..\..\src\Common.ClientLib\Common.ClientLib.csproj" />
+    <ProjectReference Include="..\LibAPNG\LibAPNG.csproj" />
+  </ItemGroup>
   <ItemGroup Condition=" Exists('$(MSBuildProjectDirectory)\..\..\..\src\Common.CoreLib\Properties\ThisAssembly.Version.cs') ">
     <Compile Include="..\..\..\src\Common.CoreLib\Properties\AssemblyInfo.Version.cs">
       <Link>Properties\AssemblyInfo.Version.cs</Link>
