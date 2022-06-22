@@ -11,6 +11,7 @@ using AvaloniaGif.Decoding;
 using JetBrains.Annotations;
 using System.Text;
 using System.Linq;
+using System.Diagnostics;
 
 namespace AvaloniaGif
 {
@@ -26,6 +27,7 @@ namespace AvaloniaGif
         private int _currentFrameIndex;
         private uint _totalFrameCount;
         private readonly List<ulong> _colorTableIdList;
+        public Stopwatch Stopwatch;
 
         public CancellationTokenSource CurrentCts { get; }
 
@@ -77,6 +79,9 @@ namespace AvaloniaGif
 
             // if (_gifDecoder.Header.HasGlobalColorTable)
             //     _colorTableIdList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
+
+            Stopwatch ??= new Stopwatch();
+            Stopwatch.Reset();
         }
 
         private Stream GetStreamFromString(string str)
@@ -112,6 +117,18 @@ namespace AvaloniaGif
         {
             CurrentCts.Cancel();
             _targetBitmap?.Dispose();
+        }
+
+        public void Run()
+        {
+            if (!Stopwatch.IsRunning)
+                Stopwatch.Start();
+        }
+
+        public void Pause()
+        {
+            if (Stopwatch.IsRunning)
+                Stopwatch.Stop();
         }
 
         [CanBeNull]

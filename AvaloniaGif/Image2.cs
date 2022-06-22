@@ -197,7 +197,7 @@ namespace AvaloniaGif
             {
                 if (imageType == ImageType.gif)
                 {
-                    if (gifInstance?.GetBitmap() is WriteableBitmap source && b is not null)
+                    if (gifInstance?.ProcessFrameTime(gifInstance.Stopwatch.Elapsed) is WriteableBitmap source && b is not null)
                     {
                         using var ctx = b.CreateDrawingContext(null);
                         var ts = new Rect(source.Size);
@@ -315,8 +315,10 @@ namespace AvaloniaGif
 
             if (image.imageType == ImageType.gif)
             {
-                image.gifInstance = new GifInstance();
-                image.gifInstance.SetSource(value);
+                image.gifInstance = new GifInstance(value);
+                image.gifInstance.IterationCount = IterationCount.Infinite;
+                if (image.AutoStart)
+                    image.gifInstance.Run();
                 if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
                     return;
                 image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
