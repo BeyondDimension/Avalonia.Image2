@@ -11,8 +11,7 @@
     <EmbeddedResource Include="**\*.xaml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="**\*.gif" />
-    <EmbeddedResource Include="Assets\*" />
+    <AvaloniaResource Include="**\*.gif" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Images\3390_library_600x900.jpg" />

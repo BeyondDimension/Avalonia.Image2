@@ -1,114 +1,156 @@
-using AvaloniaGif.Decoding;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Animation;
+using System.Linq;
 using System.Threading;
+using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using Avalonia.Rendering;
-using Avalonia.Logging;
+using AvaloniaGif.Decoding;
 using JetBrains.Annotations;
 using System.Text;
 using System.Linq;
 
 namespace AvaloniaGif
 {
-    public class GifInstance : IDisposable
+    internal class GifInstance : IDisposable
     {
-        public Stream Stream { get; private set; }
-        public IterationCount IterationCount { get; private set; }
+        public IterationCount IterationCount { get; set; }
         public bool AutoStart { get; private set; } = true;
-        public Progress<int> Progress { get; private set; }
+        private readonly GifDecoder _gifDecoder;
+        private readonly WriteableBitmap _targetBitmap;
+        private TimeSpan _totalTime;
+        private readonly List<TimeSpan> _frameTimes;
+        private uint _iterationCount;
+        private int _currentFrameIndex;
+        private uint _totalFrameCount;
+        private readonly List<ulong> _colorTableIdList;
 
+        public CancellationTokenSource CurrentCts { get; }
 
-        bool _streamCanDispose;
-        private GifDecoder _gifDecoder;
-        private GifBackgroundWorker _bgWorker;
-        private WriteableBitmap _targetBitmap;
-        private bool _hasNewFrame;
-        private bool _isDisposed;
-
-
-
-        public void SetSource(Stream stream)
+        public GifInstance(object newValue)
         {
-            Stream = stream;
+            CurrentCts = new CancellationTokenSource();
 
-            if (Stream == null)
+            var currentStream = newValue switch
             {
-                //throw new InvalidDataException("Missing valid URI or Stream.");
-                return;
+                Stream s => s,
+                Uri u => GetStreamFromUri(u),
+                string str => GetStreamFromString(str),
+                _ => throw new InvalidDataException("Unsupported source object")
+            };
+
+            if (!currentStream.CanSeek)
+                throw new InvalidDataException("The provided stream is not seekable.");
+
+            if (!currentStream.CanRead)
+                throw new InvalidOperationException("Can't read the stream provided.");
+
+            if (currentStream.CanSeek)
+            {
+                currentStream.Seek(0, SeekOrigin.Begin);
             }
 
-            _gifDecoder = new GifDecoder(Stream);
-            _bgWorker = new GifBackgroundWorker(_gifDecoder);
+            _gifDecoder = new GifDecoder(currentStream, CurrentCts.Token);
             var pixSize = new PixelSize(_gifDecoder.Header.Dimensions.Width, _gifDecoder.Header.Dimensions.Height);
 
             _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
-            _bgWorker.CurrentFrameChanged += FrameChanged;
             GifPixelSize = pixSize;
-            Run();
-        }
 
-        public PixelSize GifPixelSize { get; private set; }
+            _totalTime = TimeSpan.Zero;
 
-        public WriteableBitmap GetBitmap()
-        {
-            WriteableBitmap ret = null;
-            if (_hasNewFrame)
+            _frameTimes = _gifDecoder.Frames.Select(frame =>
             {
-                _hasNewFrame = false;
-                ret = _targetBitmap;
-            }
-            return ret;
+                _totalTime = _totalTime.Add(frame.FrameDelay);
+                return _totalTime;
+            }).ToList();
+
+            _gifDecoder.RenderFrame(0, _targetBitmap);
+
+            // Save the color table cache ID's to refresh them on cache while
+            // // the image is either stopped/paused.
+            // _colorTableIdList = _gifDecoder.Frames
+            //     .Where(p => p.IsLocalColorTableUsed)
+            //     .Select(p => p.LocalColorTableCacheID)
+            //     .ToList();
+
+            // if (_gifDecoder.Header.HasGlobalColorTable)
+            //     _colorTableIdList.Add(_gifDecoder.Header.GlobalColorTableCacheID);
         }
 
-        private void FrameChanged()
+        private Stream GetStreamFromString(string str)
         {
-            if (_targetBitmap is WriteableBitmap w)
+            if (!Uri.TryCreate(str, UriKind.RelativeOrAbsolute, out var res))
             {
-                if (_isDisposed) return;
-                _hasNewFrame = true;
-
-                using var lockedBitmap = w?.Lock();
-                _gifDecoder?.WriteBackBufToFb(lockedBitmap.Address);
+                throw new InvalidCastException("The string provided can't be converted to URI.");
             }
+
+            return GetStreamFromUri(res);
         }
 
-        public void Run()
+        private Stream GetStreamFromUri(Uri uri)
         {
-            if (!Stream.CanSeek)
-                throw new ArgumentException("The stream is not seekable");
+            var uriString = uri.OriginalString.Trim();
 
-            _bgWorker?.SendCommand(BgWorkerCommand.Play);
+            if (!uriString.StartsWith("resm") && !uriString.StartsWith("avares"))
+                throw new InvalidDataException(
+                    "The URI provided is not currently supported.");
+
+            var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
+
+            if (assetLocator is null)
+                throw new InvalidDataException(
+                    "The resource URI was not found in the current assembly.");
+
+            return assetLocator.Open(uri);
         }
 
-        public void Pause()
-        {
-            _bgWorker?.SendCommand(BgWorkerCommand.Pause);
-        }
-
-        public void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
-        {
-            var newVal = (IterationCount)e.NewValue;
-            IterationCount = newVal;
-        }
-
-        public void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
-        {
-            var newVal = (bool)e.NewValue;
-            this.AutoStart = newVal;
-        }
-
+        public PixelSize GifPixelSize { get; }
 
         public void Dispose()
         {
-            _isDisposed = true;
-            _bgWorker?.SendCommand(BgWorkerCommand.Dispose);
+            CurrentCts.Cancel();
             _targetBitmap?.Dispose();
+        }
+
+        [CanBeNull]
+        public WriteableBitmap ProcessFrameTime(TimeSpan stopwatchElapsed)
+        {
+            if (!IterationCount.IsInfinite && _iterationCount > IterationCount.Value)
+            {
+                return null;
+            }
+
+            if (CurrentCts.IsCancellationRequested)
+            {
+                return null;
+            }
+
+            var timeModulus = TimeSpan.FromTicks(stopwatchElapsed.Ticks % _totalTime.Ticks);
+            var targetFrame = _frameTimes.LastOrDefault(x => x <= timeModulus);
+            var currentFrame = _frameTimes.IndexOf(targetFrame);
+            if (currentFrame == -1) currentFrame = 0;
+
+            if (_currentFrameIndex != currentFrame)
+            {
+                // We skipped too much frames in between render updates
+                // so clear the frame and redraw the previous one.
+                if (currentFrame - _currentFrameIndex > 1)
+                {
+                }
+
+                _currentFrameIndex = currentFrame;
+
+                _gifDecoder.RenderFrame(_currentFrameIndex, _targetBitmap);
+
+                _totalFrameCount++;
+
+                if (!IterationCount.IsInfinite && _totalFrameCount % _frameTimes.Count == 0)
+                    _iterationCount++;
+            }
+
+            return _targetBitmap;
         }
 
     }
