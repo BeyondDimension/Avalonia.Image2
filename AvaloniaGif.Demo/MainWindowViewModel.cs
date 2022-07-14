@@ -21,14 +21,16 @@ namespace AvaloniaGif.Demo
             };
 
             var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
-
-            AvailableGifs = assetLoader.GetAssets(new Uri("avares://AvaloniaGif.Demo/Images/"), null)
-                .Select(x => x).ToList();
+            var list = assetLoader.GetAssets(new Uri("avares://AvaloniaGif.Demo/Images/"), null)
+                .Select(x => x.AbsoluteUri).ToList();
+            list.Add("https://image.mossimo.net:5996/images/aa01.gif");
+            list.Add("https://image.mossimo.net:5996/images/ys_900x350_0620.jpg");
+            AvailableGifs = list;
         }
 
-        private IReadOnlyList<Uri> _availableGifs;
+        private IReadOnlyList<string> _availableGifs;
 
-        public IReadOnlyList<Uri> AvailableGifs
+        public IReadOnlyList<string> AvailableGifs
         {
             get => _availableGifs;
             set => this.RaiseAndSetIfChanged(ref _availableGifs, value);
