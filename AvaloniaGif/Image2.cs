@@ -8,7 +8,6 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.Platform;
 using System.Net;
-using Avalonia.Visuals.Media.Imaging;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Application.Services;
