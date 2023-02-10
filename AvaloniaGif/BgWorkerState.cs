@@ -1,12 +1,11 @@
-﻿namespace AvaloniaGif
+﻿namespace AvaloniaGif;
+
+internal enum BgWorkerState
 {
-    internal enum BgWorkerState
-    {
-        Null,
-        Start,
-        Running,
-        Paused,
-        Complete,
-        Dispose
-    }
+    Null,
+    Start,
+    Running,
+    Paused,
+    Complete,
+    Dispose
 }

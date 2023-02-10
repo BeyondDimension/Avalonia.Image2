@@ -1,15 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-  <ItemGroup Condition=" Exists('$(MSBuildProjectDirectory)\..\..\..\src\Common.CoreLib\Properties\ThisAssembly.Version.cs') ">
-    <Compile Include="..\..\..\src\Common.CoreLib\Properties\AssemblyInfo.Version.cs">
-      <Link>Properties\AssemblyInfo.Version.cs</Link>
-    </Compile>
-    <Compile Include="..\..\..\src\Common.CoreLib\Properties\ThisAssembly.Version.cs">
-      <Link>Properties\ThisAssembly.Version.cs</Link>
-    </Compile>
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsTrimmable>true</IsTrimmable>
+	</PropertyGroup>
 </Project>

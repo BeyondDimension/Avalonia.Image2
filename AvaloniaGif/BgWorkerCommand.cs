@@ -1,10 +1,9 @@
-﻿namespace AvaloniaGif
+﻿namespace AvaloniaGif;
+
+internal enum BgWorkerCommand
 {
-    internal enum BgWorkerCommand
-    {
-        Null,
-        Play,
-        Pause,
-        Dispose
-    }
+    Null,
+    Play,
+    Pause,
+    Dispose
 }
