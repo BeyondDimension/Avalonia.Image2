@@ -7,6 +7,8 @@ using Avalonia.Threading;
 using Avalonia.Platform;
 using Avalonia.Visuals.Media.Imaging;
 using Avalonia.Metadata;
+using System.Diagnostics;
+using LibAPNG.Chunks;
 
 namespace AvaloniaGif;
 
@@ -29,10 +31,12 @@ public class Image2 : Control
 
     public static readonly StyledProperty<BitmapInterpolationMode> QualityProperty = AvaloniaProperty.Register<Image2, BitmapInterpolationMode>(nameof(Quality), BitmapInterpolationMode.HighQuality);
 
+    private Stopwatch? _stopwatch;
     private GifInstance? gifInstance;
     private ApngInstance? apngInstance;
     private IBitmap? backingRTB;
     private ImageType imageType;
+
     static Image2()
     {
         SourceProperty.Changed.Subscribe(SourceChanged);
@@ -142,7 +146,7 @@ public class Image2 : Control
         }
         else if (gifInstance != null)
         {
-            gifInstance.Run();
+            _stopwatch.Start();
         }
         base.OnAttachedToVisualTree(e);
     }
@@ -155,7 +159,7 @@ public class Image2 : Control
         }
         else if (gifInstance != null)
         {
-            gifInstance.Pause();
+            _stopwatch.Stop();
         }
         base.OnDetachedFromVisualTree(e);
     }
@@ -183,17 +187,34 @@ public class Image2 : Control
             }
         }
 
+        //Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
+        //Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
+
+
         if (backingRTB is RenderTargetBitmap b)
         {
             if (imageType == ImageType.gif)
             {
-                if (gifInstance?.ProcessFrameTime(gifInstance.Stopwatch.Elapsed) is WriteableBitmap source && b is not null)
+                if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
+                {
+                    return;
+                }
+
+                if (!_stopwatch.IsRunning)
+                {
+                    _stopwatch.Start();
+                }
+
+                var currentFrame = gifInstance.ProcessFrameTime(_stopwatch.Elapsed);
+
+                if (currentFrame is { } source && b is { })
                 {
                     using var ctx = b.CreateDrawingContext(null);
                     var ts = new Rect(source.Size);
                     ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts, Quality);
                 }
-                RenderBitmap(backingRTB);
+
+                RenderBitmap(b);
                 Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
                 return;
             }
@@ -208,14 +229,17 @@ public class Image2 : Control
 
                     if (apngInstance._hasNewFrame)
                     {
-                        ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
                         //ctx.Clear(Colors.Transparent);
+                        ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
                         ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
+                        ctx.PopBitmapBlendMode();
                     }
                     else
                     {
                         ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
                         ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
+                        ctx.PopBitmapBlendMode();
+                        return;
                     }
                 }
                 RenderBitmap(backingRTB);
@@ -260,6 +284,12 @@ public class Image2 : Control
         {
             return new Size();
         }
+    }
+
+    public void StopAndDispose()
+    {
+        gifInstance?.Dispose();
+        backingRTB?.Dispose();
     }
 
     static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
@@ -307,11 +337,14 @@ public class Image2 : Control
         {
             image.gifInstance = new GifInstance(value);
             image.gifInstance.IterationCount = IterationCount.Infinite;
+            image._stopwatch ??= new Stopwatch();
+            image._stopwatch.Reset();
             if (image.AutoStart)
-                image.gifInstance.Run();
+                image._stopwatch.Start();
             if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
                 return;
             image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
+            Dispatcher.UIThread.Post(image.InvalidateVisual, DispatcherPriority.Background);
             return;
         }
         if (image.imageType == ImageType.png)

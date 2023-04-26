@@ -22,6 +22,7 @@ public sealed class ApngInstance : IDisposable
     private WriteableBitmap _targetBitmap;
     public Point _targetOffset;
     public bool _hasNewFrame;
+    public DisposeOps _disposeOps;
     private bool disposedValue;
 
     public void SetSource(Stream stream)
@@ -47,7 +48,7 @@ public sealed class ApngInstance : IDisposable
             _bgWorker = new ApngBackgroundWorker(_apng);
             var pixSize = new PixelSize(firstFrame.IHDRChunk.Width, firstFrame.IHDRChunk.Height);
 
-            _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
+            _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
             _bgWorker.CurrentFrameChanged += FrameChanged;
             ApngPixelSize = pixSize;
             Run();
@@ -76,7 +77,8 @@ public sealed class ApngInstance : IDisposable
             if (_targetBitmap is WriteableBitmap w)
             {
                 if (disposedValue) return;
-                _hasNewFrame = _bgWorker.CurentFrame.fcTLChunk.BlendOp == BlendOps.APNGBlendOpSource;
+                _hasNewFrame = _bgWorker.CurrentFrameIndex == 0 || _bgWorker.CurentFrame.fcTLChunk.BlendOp == BlendOps.APNGBlendOpSource;
+                _disposeOps = _bgWorker.CurentFrame.fcTLChunk.DisposeOp;
                 _targetOffset = new(_bgWorker.CurentFrame.fcTLChunk.XOffset, _bgWorker.CurentFrame.fcTLChunk.YOffset);
                 _targetBitmap = WriteableBitmap.Decode(_bgWorker.CurentFrame.GetStream());
             }
