@@ -5,7 +5,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.Platform;
-using Avalonia.Visuals.Media.Imaging;
 using Avalonia.Metadata;
 using System.Diagnostics;
 using LibAPNG.Chunks;
@@ -384,7 +383,11 @@ public class Image2 : Control
             {
                 Task.Run(async () =>
                 {
-                    value = await HttpClientService.GetImageStreamAsync(rawUri);
+                    var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
+                    if (imageHttpClientService == null)
+                        return;
+
+                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri);
                     if (value == null)
                         return;
                     Dispatcher.UIThread.Post(() =>
@@ -459,21 +462,6 @@ public class Image2 : Control
             Log.Error(nameof(Image2), ex, nameof(DecodeImage));
             // 为了让程序不闪退无视错误
             return null;
-        }
-    }
-
-    static IImageHttpClientService _HttpClientService;
-
-    public static IImageHttpClientService HttpClientService
-    {
-        get
-        {
-            _HttpClientService ??= Ioc.Get<IImageHttpClientService>();
-            return _HttpClientService;
-        }
-        set
-        {
-            _HttpClientService = value;
         }
     }
 }
