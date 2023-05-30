@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
@@ -10,10 +10,12 @@
 
 	<ItemGroup>
 		<PackageReference Include="Avalonia" />
+        <PackageReference Include="Avalonia.ReactiveUI" />
 		<PackageReference Include="BD.Common" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\..\src\Avalonia.Base.Internals\Avalonia.Base.Internals.csproj" />
 		<ProjectReference Include="..\LibAPNG\LibAPNG.csproj" />
 	</ItemGroup>
 </Project>

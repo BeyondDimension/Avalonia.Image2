@@ -23,7 +23,7 @@ namespace AvaloniaGif.Demo
             var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
             var list = assetLoader.GetAssets(new Uri("avares://AvaloniaGif.Demo/Images/"), null)
                 .Select(x => x.AbsoluteUri).ToList();
-            list.Add("https://image.mossimo.net:5996/images/aa01.gif");
+            list.Add("https://6tse5sb49lk6hk0n5edb56hibm4pc0iqom0ocsi2orftnim6hd5vuass.qc.dolfincdnx.net:5147/xdispatch2a304e1874a31533/media.st.dl.eccdnx.com/steamcommunity/public/images/items/1629910/045c57ebb6946fdf7e57a53d5768117dd8543862.gif?bsreqid=f301830fb4dd3faaaa6a682f1482045a&bsxdisp=se");
             list.Add("https://image.mossimo.net:5996/images/ys_900x350_0620.jpg");
             AvailableGifs = list;
         }

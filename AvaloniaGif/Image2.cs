@@ -28,8 +28,6 @@ public class Image2 : Control
 
     public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch));
 
-    public static readonly StyledProperty<BitmapInterpolationMode> QualityProperty = AvaloniaProperty.Register<Image2, BitmapInterpolationMode>(nameof(Quality), BitmapInterpolationMode.HighQuality);
-
     private Stopwatch? _stopwatch;
     private GifInstance? gifInstance;
     private ApngInstance? apngInstance;
@@ -95,12 +93,6 @@ public class Image2 : Control
     {
         get => GetValue(StretchProperty);
         set => SetValue(StretchProperty, value);
-    }
-
-    public BitmapInterpolationMode Quality
-    {
-        get => GetValue(QualityProperty);
-        set => SetValue(QualityProperty, value);
     }
 
     static void DecodeWidthChanged(AvaloniaPropertyChangedEventArgs e)
@@ -182,7 +174,7 @@ public class Image2 : Control
                     .CenterRect(new Rect(destRect.Size / scale));
 
                 //var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-                context.DrawImage(bitmap, sourceRect, destRect, Quality);
+                context.DrawImage(bitmap, sourceRect, destRect);
             }
         }
 
@@ -208,9 +200,9 @@ public class Image2 : Control
 
                 if (currentFrame is { } source && b is { })
                 {
-                    using var ctx = b.CreateDrawingContext(null);
+                    using var ctx = b.CreateDrawingContext();
                     var ts = new Rect(source.Size);
-                    ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts, Quality);
+                    ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ts);
                 }
 
                 RenderBitmap(b);
@@ -221,7 +213,7 @@ public class Image2 : Control
             {
                 if (apngInstance.GetBitmap() is WriteableBitmap source && b is not null)
                 {
-                    using var ctx = b.CreateDrawingContext(null);
+                    using var ctx = b.CreateDrawingContext();
                     var ts = new Rect(b.Size);
                     var ns = new Rect(apngInstance._targetOffset, source.Size);
                     //ctx.DrawRectangle(Brushes.Black, null, new Rect(0, 0, apngInstance.ApngPixelSize.Width, apngInstance.ApngPixelSize.Height));
@@ -229,15 +221,15 @@ public class Image2 : Control
                     if (apngInstance._hasNewFrame)
                     {
                         //ctx.Clear(Colors.Transparent);
-                        ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
-                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
-                        ctx.PopBitmapBlendMode();
+                        //ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
+                        ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ns);
+                        //ctx.PopBitmapBlendMode();
                     }
                     else
                     {
-                        ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
-                        ctx.DrawBitmap(source.PlatformImpl, 1, ts, ns, Quality);
-                        ctx.PopBitmapBlendMode();
+                        //ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
+                        ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ns);
+                        //ctx.PopBitmapBlendMode();
                         return;
                     }
                 }
@@ -443,15 +435,16 @@ public class Image2 : Control
             if (stream == null || stream.CanRead == false || stream.Length == 0)
                 return null;
 
+            var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
             if (DecodeWidth > 0)
             {
                 stream.Position = 0;
-                return Bitmap.DecodeToWidth(stream, DecodeWidth, Quality);
+                return Bitmap.DecodeToWidth(stream, DecodeWidth, interpolationMode);
             }
             else if (DecodeHeight > 0)
             {
                 stream.Position = 0;
-                return Bitmap.DecodeToHeight(stream, DecodeHeight, Quality);
+                return Bitmap.DecodeToHeight(stream, DecodeHeight, interpolationMode);
             }
 
             //https://github.com/mono/SkiaSharp/issues/1551

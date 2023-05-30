@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Splat;
 
 namespace AvaloniaGif
 {
@@ -144,9 +145,9 @@ namespace AvaloniaGif
 
             if (currentFrame is { } source && backingRTB is { })
             {
-                using var ctx = backingRTB.CreateDrawingContext(null);
+                using var ctx = backingRTB.CreateDrawingContext();
                 var ts = new Rect(source.Size);
-                ctx.DrawBitmap(source.PlatformImpl, 1, ts, ts);
+                ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ts);
             }
 
             if (backingRTB is not null && Bounds.Width > 0 && Bounds.Height > 0)
@@ -163,9 +164,10 @@ namespace AvaloniaGif
                 var sourceRect = new Rect(sourceSize)
                     .CenterRect(new Rect(destRect.Size / scale));
 
-                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+                //var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+                //backingRTB = backingRTB.CreateScaledBitmap(new PixelSize(Width, Height), interpolationMode);
 
-                context.DrawImage(backingRTB, sourceRect, destRect, interpolationMode);
+                context.DrawImage(backingRTB, sourceRect, destRect);
             }
         }
 

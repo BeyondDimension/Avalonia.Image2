@@ -8,7 +8,6 @@ using Avalonia.Animation;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using AvaloniaGif.Decoding;
-using JetBrains.Annotations;
 
 namespace AvaloniaGif
 {
@@ -117,7 +116,6 @@ namespace AvaloniaGif
             _targetBitmap?.Dispose();
         }
 
-        [CanBeNull]
         public WriteableBitmap ProcessFrameTime(TimeSpan stopwatchElapsed)
         {
             if (!IterationCount.IsInfinite && _iterationCount > IterationCount.Value)
@@ -144,12 +142,37 @@ namespace AvaloniaGif
             return ProcessFrameIndex(currentFrame);
         }
 
-        internal WriteableBitmap ProcessFrameIndex(int frameIndex)
-        {
-            _gifDecoder.RenderFrame(frameIndex, _targetBitmap);
-            _currentFrameIndex = frameIndex;
+        return _targetBitmap;
+    }
 
-            return _targetBitmap;
+    private void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                // ????§Û???(?§Û????)
+                CurrentCts.Cancel();
+                _targetBitmap?.Dispose();
+            }
+
+            // ???¦Ä?§Û?????(¦Ä?§Û?????)????§Õ?????
+            // ?????????????? null
+            disposedValue = true;
         }
+    }
+
+    // // ??????Dispose(bool disposing)????????????¦Ä?§Û????????????????????
+    // ~GifInstance()
+    // {
+    //     // ???????????????????????Dispose(bool disposing)????????
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
+    {
+        // ???????????????????????Dispose(bool disposing)????????
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
