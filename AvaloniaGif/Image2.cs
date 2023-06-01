@@ -373,7 +373,7 @@ public class Image2 : Control
             }
             else if (String2.IsHttpUrl(rawUri))
             {
-                Task.Run(async () =>
+                Task2.InBackground(async () =>
                 {
                     var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
                     if (imageHttpClientService == null)
