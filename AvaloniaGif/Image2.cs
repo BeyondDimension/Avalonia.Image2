@@ -392,8 +392,8 @@ public class Image2 : Control
             else
             {
                 uri = new Uri(rawUri);
-                value = AssetLoader.Open(uri);
-
+                if (AssetLoader.Exists(uri))
+                    value = AssetLoader.Open(uri);
             }
 
             //if (suri.OriginalString.Trim().StartsWith("resm"))
@@ -406,7 +406,8 @@ public class Image2 : Control
         {
             if (uri.OriginalString.Trim().StartsWith("resm"))
             {
-                value = AssetLoader.Open(uri);
+                if (AssetLoader.Exists(uri))
+                    value = AssetLoader.Open(uri);
             }
         }
         else if (obj is Stream stream)

@@ -97,6 +97,10 @@ namespace AvaloniaGif
                 throw new InvalidDataException(
                     "The URI provided is not currently supported.");
 
+            if (!AssetLoader.Exists(uri))
+                throw new InvalidDataException(
+                    "The URI provided is not currently supported.");
+
             return AssetLoader.Open(uri);
         }
 
