@@ -31,7 +31,7 @@ public class Image2 : Control
     private Stopwatch? _stopwatch;
     private GifInstance? gifInstance;
     private ApngInstance? apngInstance;
-    private IBitmap? backingRTB;
+    private Bitmap? backingRTB;
     private ImageType imageType;
 
     static Image2()
@@ -202,7 +202,7 @@ public class Image2 : Control
                 {
                     using var ctx = b.CreateDrawingContext();
                     var ts = new Rect(source.Size);
-                    ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ts);
+                    ctx.DrawBitmap2(source, 1, ts, ts);
                 }
 
                 RenderBitmap(b);
@@ -222,13 +222,13 @@ public class Image2 : Control
                     {
                         //ctx.Clear(Colors.Transparent);
                         //ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
-                        ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ns);
+                        ctx.DrawBitmap2(source, 1, ts, ns);
                         //ctx.PopBitmapBlendMode();
                     }
                     else
                     {
                         //ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
-                        ctx.DrawBitmap2(source.PlatformImpl, 1, ts, ns);
+                        ctx.DrawBitmap2(source, 1, ts, ns);
                         //ctx.PopBitmapBlendMode();
                         return;
                     }
@@ -392,12 +392,8 @@ public class Image2 : Control
             else
             {
                 uri = new Uri(rawUri);
-                var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                assets.ThrowIsNull();
-                if (assets.Exists(uri))
-                {
-                    value = assets.Open(uri);
-                }
+                value = AssetLoader.Open(uri);
+
             }
 
             //if (suri.OriginalString.Trim().StartsWith("resm"))
@@ -410,11 +406,7 @@ public class Image2 : Control
         {
             if (uri.OriginalString.Trim().StartsWith("resm"))
             {
-                var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                if (assetLocator.Exists(uri))
-                {
-                    value = assetLocator.Open(uri);
-                }
+                value = AssetLoader.Open(uri);
             }
         }
         else if (obj is Stream stream)

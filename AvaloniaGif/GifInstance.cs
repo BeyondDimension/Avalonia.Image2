@@ -97,13 +97,7 @@ namespace AvaloniaGif
                 throw new InvalidDataException(
                     "The URI provided is not currently supported.");
 
-            var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-
-            if (assetLocator is null)
-                throw new InvalidDataException(
-                    "The resource URI was not found in the current assembly.");
-
-            return assetLocator.Open(uri);
+            return AssetLoader.Open(uri);
         }
 
         public int GifFrameCount => _frameTimes.Count;
