@@ -427,16 +427,15 @@ public class Image2 : Control
         {
             if (stream == null || stream.CanRead == false || stream.Length == 0)
                 return null;
+            stream.Position = 0;
 
             var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
             if (DecodeWidth > 0)
             {
-                stream.Position = 0;
                 return Bitmap.DecodeToWidth(stream, DecodeWidth, interpolationMode);
             }
             else if (DecodeHeight > 0)
             {
-                stream.Position = 0;
                 return Bitmap.DecodeToHeight(stream, DecodeHeight, interpolationMode);
             }
 
