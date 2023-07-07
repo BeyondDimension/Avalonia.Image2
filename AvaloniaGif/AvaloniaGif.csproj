@@ -10,8 +10,11 @@
 
 	<ItemGroup>
 		<PackageReference Include="Avalonia" />
-        <PackageReference Include="Avalonia.ReactiveUI" />
+		<PackageReference Include="Avalonia.ReactiveUI" />
 		<PackageReference Include="BD.Common" />
+		<PackageReference Include="BD.Common.XmlnsDefinition.Avalonia" Version="0.0.0.0">
+			<Aliases>BD_Common_XmlnsDefinition_Avalonia</Aliases>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>
