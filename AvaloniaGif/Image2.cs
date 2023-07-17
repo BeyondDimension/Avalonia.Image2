@@ -19,6 +19,8 @@ public class Image2 : Control
 
     //public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>(nameof(IterationCount));
 
+    public static readonly StyledProperty<bool> IsFailedProperty = AvaloniaProperty.Register<Image2, bool>(nameof(IsFailed), false);
+
     public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>(nameof(AutoStart), true);
 
     public static readonly StyledProperty<int> DecodeWidthProperty = AvaloniaProperty.Register<Image2, int>(nameof(DecodeWidth));
@@ -69,6 +71,12 @@ public class Image2 : Control
     {
         get => GetValue(AutoStartProperty);
         set => SetValue(AutoStartProperty, value);
+    }
+
+    public bool IsFailed
+    {
+        get => GetValue(IsFailedProperty);
+        set => SetValue(IsFailedProperty, value);
     }
 
     public int DecodeHeight
@@ -301,6 +309,7 @@ public class Image2 : Control
         Stream? value;
         if (e.NewValue is Bitmap bitmap)
         {
+            image.IsFailed = false;
             image.backingRTB = bitmap;
             return;
         }
@@ -311,6 +320,7 @@ public class Image2 : Control
                 value = ResolveObjectToStream(image.FallbackSource, image);
                 if (value != null)
                 {
+                    image.IsFailed = true;
                     image.backingRTB = image.DecodeImage(value);
                     value.Dispose();
                 }
@@ -322,6 +332,7 @@ public class Image2 : Control
         if (value == null)
             return;
 
+        image.IsFailed = false;
         image.imageType = value.GetImageType();
 
         if (image.imageType == ImageType.gif)
