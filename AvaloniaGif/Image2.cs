@@ -11,7 +11,7 @@ using LibAPNG.Chunks;
 
 namespace AvaloniaGif;
 
-public class Image2 : Control
+public class Image2 : Control, IDisposable
 {
     public static readonly StyledProperty<object> SourceProperty = AvaloniaProperty.Register<Image2, object>(nameof(Source));
 
@@ -35,6 +35,7 @@ public class Image2 : Control
     private ApngInstance? apngInstance;
     private Bitmap? backingRTB;
     private ImageType imageType;
+    private bool disposedValue;
 
     static Image2()
     {
@@ -158,7 +159,7 @@ public class Image2 : Control
         }
         else if (gifInstance != null)
         {
-            _stopwatch.Stop();
+            _stopwatch?.Stop();
         }
         base.OnDetachedFromVisualTree(e);
     }
@@ -425,6 +426,10 @@ public class Image2 : Control
         {
             value = stream;
         }
+        else if (obj is byte[] bytes)
+        {
+            value = new MemoryStream(bytes);
+        }
 
         if (value == null)
             return null;
@@ -459,5 +464,37 @@ public class Image2 : Control
             // 为了让程序不闪退无视错误
             return null;
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                // TODO: 释放托管状态(托管对象)
+                backingRTB?.Dispose();
+                gifInstance?.Dispose();
+                apngInstance?.Dispose();
+            }
+
+            // TODO: 释放未托管的资源(未托管的对象)并重写终结器
+            // TODO: 将大型字段设置为 null
+            disposedValue = true;
+        }
+    }
+
+    // // TODO: 仅当“Dispose(bool disposing)”拥有用于释放未托管资源的代码时才替代终结器
+    // ~Image2()
+    // {
+    //     // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
+    //     Dispose(disposing: false);
+    // }
+
+    void IDisposable.Dispose()
+    {
+        // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
