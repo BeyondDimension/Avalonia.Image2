@@ -12,6 +12,7 @@ using Avalonia.Rendering.Composition;
 using Avalonia.VisualTree;
 using System.Numerics;
 using Avalonia.Logging;
+using Avalonia.Controls.Primitives;
 
 namespace Avalonia.Gif;
 
@@ -35,13 +36,14 @@ public class Image2 : Control, IDisposable
 
     public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>(nameof(StretchDirection), StretchDirection.Both);
 
-    public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch));
+    public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch), Stretch.UniformToFill);
 
     private IImageInstance? gifInstance;
     private CompositionCustomVisual? _customVisual;
     private Bitmap? backingRTB;
     private ImageType imageType;
     private bool isSimplePNG;
+    private CancellationTokenSource? _tokenSource = new();
     private bool disposedValue;
 
     [Content]
@@ -111,7 +113,6 @@ public class Image2 : Control, IDisposable
             return;
     }
 
-
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         switch (change.Property.Name)
@@ -139,11 +140,13 @@ public class Image2 : Control, IDisposable
         base.OnPropertyChanged(change);
     }
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    protected override async void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (FallbackSource != null && backingRTB == null)
         {
-            var value = ResolveStream.ResolveObjectToStream(FallbackSource, this);
+            _tokenSource?.Cancel();
+            _tokenSource = new CancellationTokenSource();
+            var value = await ResolveStream.ResolveObjectToStream(FallbackSource, this, _tokenSource.Token);
             if (value != null)
             {
                 backingRTB = DecodeImage(value);
@@ -239,79 +242,79 @@ public class Image2 : Control, IDisposable
         _customVisual = null;
     }
 
-    static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
+    private async void SourceChanged(AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Sender is not Image2 image)
-            return;
+        _tokenSource?.Cancel();
+        _tokenSource = new CancellationTokenSource();
 
-        image.gifInstance?.Dispose();
-        image.gifInstance = null;
-        image.backingRTB?.Dispose();
-        image.backingRTB = null;
+        gifInstance?.Dispose();
+        gifInstance = null;
+        backingRTB?.Dispose();
+        backingRTB = null;
 
-        if (e.NewValue == null && image.FallbackSource == null)
+        if (e.NewValue == null && FallbackSource == null)
             return;
 
         Stream? value;
         if (e.NewValue is Bitmap bitmap)
         {
-            image.IsFailed = false;
-            image.backingRTB = bitmap;
+            IsFailed = false;
+            backingRTB = bitmap;
             return;
         }
         else
         {
-            if (image.FallbackSource != null)
+            if (FallbackSource != null)
             {
-                value = ResolveStream.ResolveObjectToStream(image.FallbackSource, image);
+                value = await ResolveStream.ResolveObjectToStream(FallbackSource, this, _tokenSource.Token);
                 if (value != null)
                 {
-                    image.IsFailed = true;
-                    image.backingRTB = image.DecodeImage(value);
+                    IsFailed = true;
+                    backingRTB = DecodeImage(value);
                     value.Dispose();
                 }
             }
 
-            value = ResolveStream.ResolveObjectToStream(e.NewValue, image);
+            value = await ResolveStream.ResolveObjectToStream(e.NewValue, this, _tokenSource.Token);
         }
 
         if (value == null)
             return;
 
-        image.IsFailed = false;
-        image.imageType = value.GetImageType();
+        IsFailed = false;
+        imageType = value.GetImageType();
 
-        if (image.imageType == ImageType.gif)
+        if (imageType == ImageType.gif)
         {
             var gifInstance = new GifInstance(value);
             gifInstance.IterationCount = IterationCount.Infinite;
             if (gifInstance.GifPixelSize.Width < 1 || gifInstance.GifPixelSize.Height < 1)
                 return;
-            image.gifInstance = gifInstance;
-            image._customVisual?.SendHandlerMessage(image.gifInstance);
+            this.gifInstance = gifInstance;
+            _customVisual?.SendHandlerMessage(gifInstance);
             return;
         }
-        if (image.imageType == ImageType.png)
+        if (imageType == ImageType.png)
         {
             var apngInstance = new ApngInstance(value);
             if (apngInstance.IsSimplePNG)
             {
-                image.isSimplePNG = apngInstance.IsSimplePNG;
+                isSimplePNG = apngInstance.IsSimplePNG;
                 apngInstance.Dispose();
                 apngInstance = null;
-                image.backingRTB = image.DecodeImage(value);
+                backingRTB = DecodeImage(value);
             }
             else
             {
                 apngInstance.IterationCount = IterationCount.Infinite;
                 if (apngInstance.ApngPixelSize.Width < 1 || apngInstance.ApngPixelSize.Height < 1)
                     return;
-                image.gifInstance = apngInstance;
-                image._customVisual?.SendHandlerMessage(image.gifInstance);
+                gifInstance = apngInstance;
+                _customVisual?.SendHandlerMessage(gifInstance);
             }
             return;
         }
-        image.backingRTB = image.DecodeImage(value);
+        backingRTB = DecodeImage(value);
     }
 
     Bitmap? DecodeImage(Stream stream)

@@ -21,7 +21,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Condition="" Include="..\..\..\src\Avalonia.Base.Internals\Avalonia.Base.Internals.csproj" />
         <ProjectReference Include="..\LibAPNG\LibAPNG.csproj" />
     </ItemGroup>
 </Project>

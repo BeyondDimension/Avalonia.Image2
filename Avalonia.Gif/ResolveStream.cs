@@ -5,7 +5,7 @@ namespace Avalonia.Gif;
 
 public static class ResolveStream
 {
-    public static Stream? ResolveObjectToStream(object? obj, Image2 img)
+    public static async ValueTask<Stream?> ResolveObjectToStream(object? obj, Image2 img, CancellationToken token = default)
     {
         Stream? value = null;
         if (obj is string rawUri)
@@ -20,24 +20,40 @@ public static class ResolveStream
             else if (String2.IsHttpUrl(rawUri))
             {
                 var isCache = img.EnableCache;
-                Task2.InBackground(async () =>
+
+                // Android doesn't allow network requests on the main thread, even though we are using async apis.
+                if (OperatingSystem.IsAndroid())
+                {
+                    await Task.Run(async () =>
+                    {
+                        var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
+                        if (imageHttpClientService == null)
+                            return;
+
+                        value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache, cancellationToken: token);
+                        if (value == null)
+                            return;
+                    }, CancellationToken.None);
+                }
+                else
                 {
                     var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
                     if (imageHttpClientService == null)
-                        return;
+                        return null;
+                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache, cancellationToken: token);
+                }
 
-                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache);
-                    if (value == null)
-                        return;
-                    var isImage = System.IO.FileFormats.FileFormat.IsImage(value, out var _);
-                    if (!isImage)
-                        return;
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        img.Source = value;
-                    }, DispatcherPriority.Render);
-                });
-                return null;
+                if (value == null)
+                    return null;
+
+                var isImage = System.IO.FileFormats.FileFormat.IsImage(value, out var _);
+
+                if (!isImage)
+                    return null;
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    img.Source = value;
+                }, DispatcherPriority.Render, CancellationToken.None);
             }
             else
             {
