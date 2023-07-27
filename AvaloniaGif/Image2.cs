@@ -155,7 +155,7 @@ public class Image2 : Control, IDisposable
         }
         else if (gifInstance != null)
         {
-            _stopwatch.Start();
+            _stopwatch?.Start();
         }
         base.OnAttachedToVisualTree(e);
     }
@@ -297,8 +297,9 @@ public class Image2 : Control, IDisposable
 
     public void StopAndDispose()
     {
-        gifInstance?.Dispose();
         backingRTB?.Dispose();
+        gifInstance?.Dispose();
+        apngInstance?.Dispose();
     }
 
     static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
@@ -409,6 +410,8 @@ public class Image2 : Control, IDisposable
                         return;
                     Dispatcher.UIThread.Post(() =>
                     {
+                        if (img.disposedValue)
+                            return;
                         img.Source = value;
                     }, DispatcherPriority.Render);
                 });
@@ -488,9 +491,7 @@ public class Image2 : Control, IDisposable
             if (disposing)
             {
                 // TODO: 释放托管状态(托管对象)
-                backingRTB?.Dispose();
-                gifInstance?.Dispose();
-                apngInstance?.Dispose();
+                StopAndDispose();
             }
 
             // TODO: 释放未托管的资源(未托管的对象)并重写终结器
