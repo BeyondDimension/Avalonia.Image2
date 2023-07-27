@@ -1,15 +1,27 @@
-<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
-		<LangVersion>latest</LangVersion> 
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks> 
-		<Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <InternalsVisibleTo Include="Avalonia.Gif.Test" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.0-rc1.1" />
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsTrimmable>true</IsTrimmable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Avalonia.Gif.Test" />
+    </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Avalonia" />
+        <PackageReference Include="Avalonia.ReactiveUI" />
+        <PackageReference Include="BD.Common" />
+        <PackageReference Include="BD.Common.XmlnsDefinition.Avalonia">
+            <Aliases>BD_Common_XmlnsDefinition_Avalonia</Aliases>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Condition="" Include="..\..\..\src\Avalonia.Base.Internals\Avalonia.Base.Internals.csproj" />
+        <ProjectReference Include="..\LibAPNG\LibAPNG.csproj" />
+    </ItemGroup>
 </Project>

@@ -1,17 +1,16 @@
 using Avalonia;
-using Avalonia.Controls; 
+using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.ReactiveUI;
 using FluentAvalonia.UI.Windowing;
 using ReactiveUI;
 
-namespace AvaloniaGif.Demo;
+namespace Avalonia.Gif.Demo;
 
-    public partial class MainWindow : Window
+public partial class MainWindow : Window
+{
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

@@ -1,21 +1,20 @@
 <Window
-    x:Class="AvaloniaGif.Demo.MainWindow"
+    x:Class="Avalonia.Gif.Demo.MainWindow"
     xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:gif="clr-namespace:AvaloniaGif;assembly=AvaloniaGif"
-        Title="GIFs on Avalonia!"
-    Width="680"
-    Height="480"
-    Background="White"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:gif="using:Avalonia.Gif"
+    Title="GIFs on Avalonia!"
+    Width="1080"
+    Height="600"
     WindowStartupLocation="CenterScreen">
     <TabControl>
         <TabItem Header="Test1">
-    <Grid ColumnDefinitions="2*, 3*">
+            <Grid ColumnDefinitions="2*, 3*">
                 <ScrollViewer Grid.Column="0">
                     <StackPanel>
                         <ComboBox ItemsSource="{Binding Path=Stretches}" SelectedItem="{Binding Path=Stretch}" />
                         <ListBox ItemsSource="{Binding Path=AvailableGifs}" SelectedItem="{Binding Path=SelectedGif}" />
-        </StackPanel>
+                    </StackPanel>
                 </ScrollViewer>
                 <ScrollViewer Grid.Column="1">
                     <StackPanel Spacing="20">
@@ -30,12 +29,12 @@
                                 DecodeWidth="200"
                                 FallbackSource="resm:AvaloniaGif.Demo.Images.avater_default.png"
                                 Source="{Binding Path=SelectedGif}"
-                      Stretch="{Binding Path=Stretch}"
-                      StretchDirection="Both" />
+                                Stretch="{Binding Path=Stretch}"
+                                StretchDirection="Both" />
                         </Panel>
                     </StackPanel>
                 </ScrollViewer>
-    </Grid>
+            </Grid>
         </TabItem>
 
         <TabItem Header="Test2" />

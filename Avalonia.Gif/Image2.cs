@@ -8,8 +8,12 @@ using Avalonia.Platform;
 using Avalonia.Metadata;
 using System.Diagnostics;
 using LibAPNG.Chunks;
+using Avalonia.Rendering.Composition;
+using Avalonia.VisualTree;
+using System.Numerics;
+using Avalonia.Logging;
 
-namespace AvaloniaGif;
+namespace Avalonia.Gif;
 
 public class Image2 : Control, IDisposable
 {
@@ -31,26 +35,14 @@ public class Image2 : Control, IDisposable
 
     public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>(nameof(StretchDirection), StretchDirection.Both);
 
-    public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch), Stretch.UniformToFill);
+    public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch));
 
-    private Stopwatch? _stopwatch;
-    private GifInstance? gifInstance;
-    private ApngInstance? apngInstance;
+    private IImageInstance? gifInstance;
+    private CompositionCustomVisual? _customVisual;
     private Bitmap? backingRTB;
     private ImageType imageType;
+    private bool isSimplePNG;
     private bool disposedValue;
-
-    static Image2()
-    {
-        SourceProperty.Changed.Subscribe(SourceChanged);
-        //IterationCountProperty.Changed.Subscribe(IterationCountChanged);
-        AutoStartProperty.Changed.Subscribe(AutoStartChanged);
-        DecodeWidthProperty.Changed.Subscribe(DecodeWidthChanged);
-        DecodeHeightProperty.Changed.Subscribe(DecodeHeightChanged);
-        AffectsRender<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
-        AffectsArrange<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
-        AffectsMeasure<Image2>(SourceProperty, StretchProperty, StretchDirectionProperty);
-    }
 
     [Content]
     public object Source
@@ -113,151 +105,92 @@ public class Image2 : Control, IDisposable
         set => SetValue(StretchProperty, value);
     }
 
-    static void DecodeWidthChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Sender is not Image2)
-            return;
-    }
-
-    static void DecodeHeightChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Sender is not Image2)
-            return;
-    }
-
-    static void AutoStartChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Sender is not Image2)
-            return;
-    }
-
     static void IterationCountChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Sender is not Image2)
             return;
     }
 
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        switch (change.Property.Name)
+        {
+            case nameof(Source):
+                SourceChanged(change);
+                InvalidateArrange();
+                InvalidateMeasure();
+                Update();
+                break;
+            case nameof(Stretch):
+            case nameof(StretchDirection):
+                InvalidateArrange();
+                InvalidateMeasure();
+                Update();
+                break;
+            case nameof(IterationCount):
+                IterationCountChanged(change);
+                break;
+            case nameof(Bounds):
+                Update();
+                break;
+        }
+
+        base.OnPropertyChanged(change);
+    }
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (FallbackSource != null && backingRTB == null)
         {
-            var value = ResolveObjectToStream(FallbackSource, this);
+            var value = ResolveStream.ResolveObjectToStream(FallbackSource, this);
             if (value != null)
             {
                 backingRTB = DecodeImage(value);
                 value.Dispose();
             }
         }
+        if (imageType == ImageType.gif || !isSimplePNG)
+        {
+            var compositor = ElementComposition.GetElementVisual(this)?.Compositor;
+            if (compositor == null || _customVisual?.Compositor == compositor)
+                return;
+            _customVisual = compositor.CreateCustomVisual(new CustomVisualHandler());
+            ElementComposition.SetElementChildVisual(this, _customVisual);
+            _customVisual.SendHandlerMessage(CustomVisualHandler.StartMessage);
 
-        if (apngInstance != null)
-        {
-            apngInstance.Run();
+            if (gifInstance is not null)
+            {
+                _customVisual?.SendHandlerMessage(gifInstance);
+            }
+
+            Update();
         }
-        else if (gifInstance != null)
-        {
-            _stopwatch?.Start();
-        }
+
         base.OnAttachedToVisualTree(e);
-    }
-
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        if (apngInstance != null)
-        {
-            apngInstance.Pause();
-        }
-        else if (gifInstance != null)
-        {
-            _stopwatch?.Stop();
-        }
-        base.OnDetachedFromVisualTree(e);
     }
 
     public override void Render(DrawingContext context)
     {
-        void RenderBitmap(IImage? bitmap)
+        if (backingRTB is not Bitmap bitmap) return;
+
+        if (bitmap is not null && IsVisible && Bounds.Width > 0 && Bounds.Height > 0)
         {
-            if (bitmap is not null && IsVisible && Bounds.Width > 0 && Bounds.Height > 0)
-            {
-                var viewPort = new Rect(Bounds.Size);
-                var sourceSize = bitmap.Size;
+            var viewPort = new Rect(Bounds.Size);
+            var sourceSize = bitmap.Size;
 
-                var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
-                var scaledSize = sourceSize * scale;
-                var destRect = viewPort
-                    .CenterRect(new Rect(scaledSize))
-                    .Intersect(viewPort);
+            var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+            var scaledSize = sourceSize * scale;
+            var destRect = viewPort
+                .CenterRect(new Rect(scaledSize))
+                .Intersect(viewPort);
 
-                var sourceRect = new Rect(sourceSize)
-                    .CenterRect(new Rect(destRect.Size / scale));
+            var sourceRect = new Rect(sourceSize)
+                .CenterRect(new Rect(destRect.Size / scale));
 
-                //var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-                context.DrawImage(bitmap, sourceRect, destRect);
-            }
+            //var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+            context.DrawImage(bitmap, sourceRect, destRect);
         }
-
-        //Dispatcher.UIThread.Post(InvalidateMeasure, DispatcherPriority.Background);
-        //Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
-
-
-        if (backingRTB is RenderTargetBitmap b)
-        {
-            if (imageType == ImageType.gif)
-            {
-                if (gifInstance is null || (gifInstance.CurrentCts?.IsCancellationRequested ?? true))
-                {
-                    return;
-                }
-
-                if (!_stopwatch.IsRunning)
-                {
-                    _stopwatch.Start();
-                }
-
-                var currentFrame = gifInstance.ProcessFrameTime(_stopwatch.Elapsed);
-
-                if (currentFrame is { } source && b is { })
-                {
-                    using var ctx = b.CreateDrawingContext();
-                    var ts = new Rect(source.Size);
-                    ctx.DrawBitmap2(source, 1, ts, ts);
-                }
-
-                RenderBitmap(b);
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
-                return;
-            }
-            else if (imageType == ImageType.png && apngInstance != null && !apngInstance.IsSimplePNG)
-            {
-                if (apngInstance.GetBitmap() is WriteableBitmap source && b is not null)
-                {
-                    using var ctx = b.CreateDrawingContext();
-                    var ts = new Rect(b.Size);
-                    var ns = new Rect(apngInstance._targetOffset, source.Size);
-                    //ctx.DrawRectangle(Brushes.Black, null, new Rect(0, 0, apngInstance.ApngPixelSize.Width, apngInstance.ApngPixelSize.Height));
-
-                    if (apngInstance._hasNewFrame)
-                    {
-                        //ctx.Clear(Colors.Transparent);
-                        //ctx.PushBitmapBlendMode(BitmapBlendingMode.Source);
-                        ctx.DrawBitmap2(source, 1, ts, ns);
-                        //ctx.PopBitmapBlendMode();
-                    }
-                    else
-                    {
-                        //ctx.PushBitmapBlendMode(BitmapBlendingMode.SourceOver);
-                        ctx.DrawBitmap2(source, 1, ts, ns);
-                        //ctx.PopBitmapBlendMode();
-                        return;
-                    }
-                }
-                RenderBitmap(backingRTB);
-                Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Render);
-                return;
-            }
-        }
-
-        RenderBitmap(backingRTB);
     }
 
     /// <summary>
@@ -267,39 +200,43 @@ public class Image2 : Control, IDisposable
     /// <returns>The desired size of the control.</returns>
     protected override Size MeasureOverride(Size availableSize)
     {
-        var source = backingRTB;
-        var result = new Size();
-
-        if (source != null)
+        if (gifInstance != null)
         {
-            result = Stretch.CalculateSize(availableSize, source.Size, StretchDirection);
+            var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            return Stretch.CalculateSize(availableSize, gifInstance.GetSize(scaling),
+                StretchDirection);
+        }
+        else if (backingRTB != null)
+        {
+            return Stretch.CalculateSize(availableSize, backingRTB.Size, StretchDirection);
         }
 
-        return result;
+        return new Size();
     }
 
     /// <inheritdoc/>
     protected override Size ArrangeOverride(Size finalSize)
     {
-        var source = backingRTB;
-
-        if (source != null)
+        if (gifInstance != null)
         {
-            var sourceSize = source.Size;
-            var result = Stretch.CalculateSize(finalSize, sourceSize);
-            return result;
+            var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            var sourceSize = gifInstance.GetSize(scaling);
+            return Stretch.CalculateSize(finalSize, sourceSize);
         }
-        else
+        else if (backingRTB != null)
         {
-            return new Size();
+            var sourceSize = backingRTB.Size;
+            return Stretch.CalculateSize(finalSize, sourceSize);
         }
+        return new Size();
     }
 
-    public void StopAndDispose()
+    private void StopAndDispose()
     {
         backingRTB?.Dispose();
         gifInstance?.Dispose();
-        apngInstance?.Dispose();
+        gifInstance?.Dispose();
+        _customVisual = null;
     }
 
     static void SourceChanged(AvaloniaPropertyChangedEventArgs e)
@@ -309,8 +246,6 @@ public class Image2 : Control, IDisposable
 
         image.gifInstance?.Dispose();
         image.gifInstance = null;
-        image.apngInstance?.Dispose();
-        image.apngInstance = null;
         image.backingRTB?.Dispose();
         image.backingRTB = null;
 
@@ -328,7 +263,7 @@ public class Image2 : Control, IDisposable
         {
             if (image.FallbackSource != null)
             {
-                value = ResolveObjectToStream(image.FallbackSource, image);
+                value = ResolveStream.ResolveObjectToStream(image.FallbackSource, image);
                 if (value != null)
                 {
                     image.IsFailed = true;
@@ -337,7 +272,7 @@ public class Image2 : Control, IDisposable
                 }
             }
 
-            value = ResolveObjectToStream(e.NewValue, image);
+            value = ResolveStream.ResolveObjectToStream(e.NewValue, image);
         }
 
         if (value == null)
@@ -348,111 +283,35 @@ public class Image2 : Control, IDisposable
 
         if (image.imageType == ImageType.gif)
         {
-            image.gifInstance = new GifInstance(value);
-            image.gifInstance.IterationCount = IterationCount.Infinite;
-            image._stopwatch ??= new Stopwatch();
-            image._stopwatch.Reset();
-            if (image.AutoStart)
-                image._stopwatch.Start();
-            if (image.gifInstance.GifPixelSize.Width < 1 || image.gifInstance.GifPixelSize.Height < 1)
+            var gifInstance = new GifInstance(value);
+            gifInstance.IterationCount = IterationCount.Infinite;
+            if (gifInstance.GifPixelSize.Width < 1 || gifInstance.GifPixelSize.Height < 1)
                 return;
-            image.backingRTB = new RenderTargetBitmap(image.gifInstance.GifPixelSize, new Vector(96, 96));
-            Dispatcher.UIThread.Post(image.InvalidateVisual, DispatcherPriority.Background);
+            image.gifInstance = gifInstance;
+            image._customVisual?.SendHandlerMessage(image.gifInstance);
             return;
         }
         if (image.imageType == ImageType.png)
         {
-            image.apngInstance = new ApngInstance();
-            image.apngInstance.SetSource(value);
-            if (image.apngInstance.IsSimplePNG)
+            var apngInstance = new ApngInstance(value);
+            if (apngInstance.IsSimplePNG)
             {
-                image.apngInstance.Dispose();
-                image.apngInstance = null;
+                image.isSimplePNG = apngInstance.IsSimplePNG;
+                apngInstance.Dispose();
+                apngInstance = null;
                 image.backingRTB = image.DecodeImage(value);
             }
             else
             {
-                if (image.apngInstance.ApngPixelSize.Width < 1 || image.apngInstance.ApngPixelSize.Height < 1)
+                apngInstance.IterationCount = IterationCount.Infinite;
+                if (apngInstance.ApngPixelSize.Width < 1 || apngInstance.ApngPixelSize.Height < 1)
                     return;
-                image.backingRTB = new RenderTargetBitmap(image.apngInstance.ApngPixelSize, new Vector(96, 96));
+                image.gifInstance = apngInstance;
+                image._customVisual?.SendHandlerMessage(image.gifInstance);
             }
             return;
         }
         image.backingRTB = image.DecodeImage(value);
-    }
-
-    static Stream? ResolveObjectToStream(object? obj, Image2 img)
-    {
-        Stream? value = null;
-        if (obj is string rawUri)
-        {
-            if (rawUri == string.Empty) return null;
-
-            Uri uri;
-            if (File.Exists(rawUri))
-            {
-                value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            }
-            else if (String2.IsHttpUrl(rawUri))
-            {
-                var isCache = img.EnableCache;
-                Task2.InBackground(async () =>
-                {
-                    var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
-                    if (imageHttpClientService == null)
-                        return;
-
-                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache);
-                    if (value == null)
-                        return;
-                    var isImage = System.IO.FileFormats.FileFormat.IsImage(value, out var _);
-                    if (!isImage)
-                        return;
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        if (img.disposedValue)
-                            return;
-                        img.Source = value;
-                    }, DispatcherPriority.Render);
-                });
-                return null;
-            }
-            else
-            {
-                uri = new Uri(rawUri);
-                if (AssetLoader.Exists(uri))
-                    value = AssetLoader.Open(uri);
-            }
-
-            //if (suri.OriginalString.Trim().StartsWith("resm"))
-            //{
-            //    var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-            //    value = assetLocator.Open(suri);
-            //}
-        }
-        else if (obj is Uri uri)
-        {
-            if (uri.OriginalString.Trim().StartsWith("resm"))
-            {
-                if (AssetLoader.Exists(uri))
-                    value = AssetLoader.Open(uri);
-            }
-        }
-        else if (obj is Stream stream)
-        {
-            value = stream;
-        }
-        else if (obj is byte[] bytes)
-        {
-            value = new MemoryStream(bytes);
-        }
-
-        if (value == null || !value.CanRead || value.Length == 0)
-            return null;
-
-        value.Position = 0;
-
-        return value;
     }
 
     Bitmap? DecodeImage(Stream stream)
@@ -484,6 +343,110 @@ public class Image2 : Control, IDisposable
         }
     }
 
+    private void Update()
+    {
+        if (_customVisual is null || gifInstance is null)
+            return;
+
+        var dpi = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+        var sourceSize = gifInstance.GetSize(dpi);
+        var viewPort = new Rect(Bounds.Size);
+
+        var scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+        var scaledSize = sourceSize * scale;
+        var destRect = viewPort
+            .CenterRect(new Rect(scaledSize))
+            .Intersect(viewPort);
+
+        if (Stretch == Stretch.None)
+        {
+            _customVisual.Size = new Vector2((float)sourceSize.Width, (float)sourceSize.Height);
+        }
+        else
+        {
+            _customVisual.Size = new Vector2((float)destRect.Size.Width, (float)destRect.Size.Height);
+        }
+
+        _customVisual.Offset = new Vector3((float)destRect.Position.X, (float)destRect.Position.Y, 0);
+    }
+
+    private class CustomVisualHandler : CompositionCustomVisualHandler
+    {
+        private TimeSpan _animationElapsed;
+        private TimeSpan? _lastServerTime;
+        private IImageInstance? _currentInstance;
+        private bool _running;
+
+        public static readonly object StopMessage = new(), StartMessage = new();
+
+        public override void OnMessage(object message)
+        {
+            if (message == StartMessage)
+            {
+                _running = true;
+                _lastServerTime = null;
+                RegisterForNextAnimationFrameUpdate();
+            }
+            else if (message == StopMessage)
+            {
+                _running = false;
+            }
+            else if (message is IImageInstance instance)
+            {
+                _currentInstance?.Dispose();
+                _currentInstance = instance;
+            }
+        }
+
+        public override void OnAnimationFrameUpdate()
+        {
+            if (!_running) return;
+            Invalidate();
+            RegisterForNextAnimationFrameUpdate();
+        }
+
+        public override void OnRender(ImmediateDrawingContext drawingContext)
+        {
+            if (_running)
+            {
+                if (_lastServerTime.HasValue) _animationElapsed += (CompositionNow - _lastServerTime.Value);
+                _lastServerTime = CompositionNow;
+            }
+
+            try
+            {
+                if (_currentInstance is null || _currentInstance.IsDisposed) return;
+
+                var bitmap = _currentInstance.ProcessFrameTime(_animationElapsed);
+                if (bitmap is not null)
+                {
+                    if (_currentInstance is ApngInstance apngInstance)
+                    {
+                        var ts = new Rect(_currentInstance.GetSize(1));
+                        var ns = new Rect(apngInstance._targetOffset, _currentInstance.GetSize(1));
+                        drawingContext.DrawBitmap(bitmap, ts, ns);
+
+                        //if (apngInstance._hasNewFrame)
+                        //{
+                        //    drawingContext.DrawBitmap2(bitmap, 1, ts, ns, bitmapBlending: BitmapBlendingMode.SourceOver);
+                        //}
+                        //else
+                        //{
+                        //    drawingContext.DrawBitmap2(bitmap, 1, ts, ns, bitmapBlending: BitmapBlendingMode.DestinationIn);
+                        //}
+                    }
+                    else
+                        drawingContext.DrawBitmap(bitmap, new Rect(_currentInstance.GetSize(1)), GetRenderBounds());
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Sink?.Log(LogEventLevel.Error, "Image2 Renderer ", this, e.ToString());
+
+            }
+        }
+    }
+
     protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)
@@ -499,13 +462,6 @@ public class Image2 : Control, IDisposable
             disposedValue = true;
         }
     }
-
-    // // TODO: 仅当“Dispose(bool disposing)”拥有用于释放未托管资源的代码时才替代终结器
-    // ~Image2()
-    // {
-    //     // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
-    //     Dispose(disposing: false);
-    // }
 
     void IDisposable.Dispose()
     {

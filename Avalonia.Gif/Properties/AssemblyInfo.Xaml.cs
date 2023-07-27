@@ -1,4 +1,4 @@
 // steampp
 using Avalonia.Metadata;
 
-[assembly: XmlnsDefinition("https://steampp.net/ui", "AvaloniaGif")]
+[assembly: XmlnsDefinition("https://steampp.net/ui", "Avalonia.Gif")]

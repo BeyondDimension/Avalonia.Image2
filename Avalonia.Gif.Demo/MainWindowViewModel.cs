@@ -7,12 +7,11 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
+using ReactiveUI;
 
 namespace Avalonia.Gif.Demo
 {
-    public partial class MainWindowViewModel : ObservableObject
+    public partial class MainWindowViewModel : ReactiveObject
     {
         public MainWindowViewModel()
         {
@@ -24,19 +23,45 @@ namespace Avalonia.Gif.Demo
                 Stretch.UniformToFill
             };
 
-            AvailableGifs = AssetLoader.GetAssets(new Uri("avares://Avalonia.Gif.Demo/Images/"), null)
-                .Select(x => x).ToList();
+            var list = AssetLoader.GetAssets(new Uri("avares://Avalonia.Gif.Demo/Images/"), null)
+                  .Select(x => x.AbsoluteUri).ToList();
+            list.Add("https://6tse5sb49lk6hk0n5edb56hibm4pc0iqom0ocsi2orftnim6hd5vuass.qc.dolfincdnx.net:5147/xdispatch2a304e1874a31533/media.st.dl.eccdnx.com/steamcommunity/public/images/items/1629910/045c57ebb6946fdf7e57a53d5768117dd8543862.gif?bsreqid=f301830fb4dd3faaaa6a682f1482045a&bsxdisp=se");
+            list.Add("https://image.mossimo.net:5996/images/ys_900x350_0620.jpg");
+            AvailableGifs = list;
         }
 
-        [ObservableProperty] private IReadOnlyList<Uri> _availableGifs;
+        private IReadOnlyList<string> _availableGifs;
 
-        [ObservableProperty] private string _selectedGif;
+        public IReadOnlyList<string> AvailableGifs
+        {
+            get => _availableGifs;
+            set => this.RaiseAndSetIfChanged(ref _availableGifs, value);
+        }
 
-        [ObservableProperty] private IReadOnlyList<Stretch> _stretches;
+        private string _selectedGif;
 
-        [ObservableProperty] private Stretch _stretch = Stretch.None;
+        public string SelectedGif
+        {
+            get => _selectedGif;
+            set => this.RaiseAndSetIfChanged(ref _selectedGif, value);
+        }
 
-        public ICommand HangUiThreadCommand { get; } =
-            new RelayCommand(() => Dispatcher.UIThread.InvokeAsync(() => Thread.Sleep(5000)));
+        private IReadOnlyList<Stretch> _stretches;
+
+        public IReadOnlyList<Stretch> Stretches
+        {
+            get => _stretches;
+            set => this.RaiseAndSetIfChanged(ref _stretches, value);
+        }
+
+        private Stretch _stretch = Stretch.None;
+
+        public Stretch Stretch
+        {
+            get => _stretch;
+            set => this.RaiseAndSetIfChanged(ref _stretch, value);
+        }
+
+        public ICommand HangUiThreadCommand { get; } = ReactiveCommand.Create(() => Dispatcher.UIThread.InvokeAsync(() => Thread.Sleep(5000)));
     }
 }

@@ -1,17 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using Avalonia.Gif.Decoding; 
+using Avalonia.Gif.Decoding;
 
 namespace Avalonia.Gif;
 
-public class GifInstance : IDisposable
+public class GifInstance : IImageInstance, IDisposable
 {
     public IterationCount IterationCount { get; set; }
     public bool AutoStart { get; private set; } = true;
@@ -87,18 +81,16 @@ public class GifInstance : IDisposable
             throw new InvalidDataException(
                 "The URI provided is not currently supported.");
 
-        var assetLocator = AvaloniaLocator.Current.GetService<IAssetLoader>();
-
-        if (assetLocator is null)
-            throw new InvalidDataException(
-                "The resource URI was not found in the current assembly.");
-
-        return assetLocator.Open(uri);
+        return AssetLoader.Open(uri);
     }
 
     public int GifFrameCount => _frameTimes.Count;
 
     public PixelSize GifPixelSize { get; }
+
+    public double Height => GifPixelSize.Height;
+
+    public double Width => GifPixelSize.Width;
 
     public void Dispose()
     {
@@ -107,8 +99,10 @@ public class GifInstance : IDisposable
         _targetBitmap?.Dispose();
     }
 
-    [CanBeNull]
-    public WriteableBitmap ProcessFrameTime(TimeSpan stopwatchElapsed)
+    public bool IsDisposed { get; private set; }
+
+
+    public Bitmap? ProcessFrameTime(TimeSpan stopwatchElapsed)
     {
         if (!IterationCount.IsInfinite && _iterationCount > IterationCount.Value)
         {
@@ -141,4 +135,7 @@ public class GifInstance : IDisposable
 
         return _targetBitmap;
     }
+
+
+    public Size GetSize(double scaling) => GifPixelSize.ToSize(scaling);
 }

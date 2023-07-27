@@ -1,4 +1,4 @@
-﻿namespace AvaloniaGif;
+﻿namespace Avalonia.Gif;
 
 internal enum ImageType
 {
