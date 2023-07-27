@@ -24,11 +24,14 @@ public class Image2 : Control, IDisposable
     public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>(nameof(AutoStart), true);
 
     public static readonly StyledProperty<int> DecodeWidthProperty = AvaloniaProperty.Register<Image2, int>(nameof(DecodeWidth));
+
     public static readonly StyledProperty<int> DecodeHeightProperty = AvaloniaProperty.Register<Image2, int>(nameof(DecodeHeight));
+
+    public static readonly StyledProperty<bool> EnableCacheProperty = AvaloniaProperty.Register<Image2, bool>(nameof(EnableCache), true);
 
     public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>(nameof(StretchDirection), StretchDirection.Both);
 
-    public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch));
+    public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch), Stretch.UniformToFill);
 
     private Stopwatch? _stopwatch;
     private GifInstance? gifInstance;
@@ -78,6 +81,12 @@ public class Image2 : Control, IDisposable
     {
         get => GetValue(IsFailedProperty);
         set => SetValue(IsFailedProperty, value);
+    }
+
+    public bool EnableCache
+    {
+        get => GetValue(EnableCacheProperty);
+        set => SetValue(EnableCacheProperty, value);
     }
 
     public int DecodeHeight
@@ -385,14 +394,18 @@ public class Image2 : Control, IDisposable
             }
             else if (String2.IsHttpUrl(rawUri))
             {
+                var isCache = img.EnableCache;
                 Task2.InBackground(async () =>
                 {
                     var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
                     if (imageHttpClientService == null)
                         return;
 
-                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri);
+                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache);
                     if (value == null)
+                        return;
+                    var isImage = System.IO.FileFormats.FileFormat.IsImage(value, out var _);
+                    if (!isImage)
                         return;
                     Dispatcher.UIThread.Post(() =>
                     {
@@ -431,8 +444,10 @@ public class Image2 : Control, IDisposable
             value = new MemoryStream(bytes);
         }
 
-        if (value == null)
+        if (value == null || !value.CanRead || value.Length == 0)
             return null;
+
+        value.Position = 0;
 
         return value;
     }
