@@ -30,7 +30,7 @@ public sealed class ApngInstance : IImageInstance, IDisposable
     public CancellationTokenSource CurrentCts { get; } = new();
 
     private APNG _apng;
-    //private MemoryStream? _bcakStream;
+    //private RenderTargetBitmap? _bcakBitmap;
     private WriteableBitmap? _targetBitmap;
     private TimeSpan _totalTime;
     private readonly List<TimeSpan> _frameTimes;
@@ -67,7 +67,9 @@ public sealed class ApngInstance : IImageInstance, IDisposable
             var firstFrame = _apng.Frames.First();
             var pixSize = new PixelSize(firstFrame.IHDRChunk.Width, firstFrame.IHDRChunk.Height);
 
-            _targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            //_targetBitmap = new WriteableBitmap(pixSize, new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            _targetBitmap = WriteableBitmap.Decode(_apng.Frames[0].GetStream());
+            //_bcakBitmap = new RenderTargetBitmap(pixSize, new Vector(96, 96));
             ApngPixelSize = pixSize;
         }
 
@@ -80,7 +82,6 @@ public sealed class ApngInstance : IImageInstance, IDisposable
         }).ToList();
 
         //_bcakStream = _apng.Frames[0].GetStream();
-        _targetBitmap = WriteableBitmap.Decode(_apng.Frames[0].GetStream());
     }
 
     public WriteableBitmap GetBitmap()
@@ -128,8 +129,6 @@ public sealed class ApngInstance : IImageInstance, IDisposable
         _hasNewFrame = frameIndex == 0 || currentFrame.fcTLChunk.BlendOp == BlendOps.APNGBlendOpSource;
         _disposeOps = currentFrame.fcTLChunk.DisposeOp;
         _targetOffset = new(currentFrame.fcTLChunk.XOffset, currentFrame.fcTLChunk.YOffset);
-
-        //currentFrame.PopBlendedFrameStream(_bcakStream, ApngPixelSize.Width, ApngPixelSize.Height);
 
         _targetBitmap = WriteableBitmap.Decode(currentFrame.GetStream());
 

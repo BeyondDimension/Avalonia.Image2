@@ -12,7 +12,6 @@ public static class ResolveStream
         {
             if (rawUri == string.Empty) return null;
 
-            Uri uri;
             if (File.Exists(rawUri))
             {
                 value = new FileStream(rawUri, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
@@ -55,11 +54,15 @@ public static class ResolveStream
                     img.Source = value;
                 }, DispatcherPriority.Render, CancellationToken.None);
             }
-            else
+            else if (Uri.TryCreate(rawUri, UriKind.RelativeOrAbsolute, out var uri))
             {
-                uri = new Uri(rawUri);
-                if (AssetLoader.Exists(uri))
-                    value = AssetLoader.Open(uri);
+                try
+                {
+                    if (AssetLoader.Exists(uri))
+                        value = AssetLoader.Open(uri);
+                }
+                catch
+                { }
             }
 
             //if (suri.OriginalString.Trim().StartsWith("resm"))

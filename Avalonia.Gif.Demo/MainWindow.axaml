@@ -10,12 +10,13 @@
     <TabControl>
         <TabItem Header="Test1">
             <Grid ColumnDefinitions="2*, 3*">
-                <ScrollViewer Grid.Column="0">
-                    <StackPanel>
-                        <ComboBox ItemsSource="{Binding Path=Stretches}" SelectedItem="{Binding Path=Stretch}" />
-                        <ListBox ItemsSource="{Binding Path=AvailableGifs}" SelectedItem="{Binding Path=SelectedGif}" />
-                    </StackPanel>
-                </ScrollViewer>
+                <DockPanel Grid.Column="0">
+                    <ComboBox
+                        DockPanel.Dock="Top"
+                        ItemsSource="{Binding Path=Stretches}"
+                        SelectedItem="{Binding Path=Stretch}" />
+                    <ListBox ItemsSource="{Binding Path=AvailableGifs}" SelectedItem="{Binding Path=SelectedGif}" />
+                </DockPanel>
                 <ScrollViewer Grid.Column="1">
                     <StackPanel Spacing="20">
                         <Panel>

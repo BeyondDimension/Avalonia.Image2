@@ -286,12 +286,17 @@ public class Image2 : Control, IDisposable
 
         if (imageType == ImageType.gif)
         {
-            var gifInstance = new GifInstance(value);
-            gifInstance.IterationCount = IterationCount.Infinite;
-            if (gifInstance.GifPixelSize.Width < 1 || gifInstance.GifPixelSize.Height < 1)
-                return;
-            this.gifInstance = gifInstance;
-            _customVisual?.SendHandlerMessage(gifInstance);
+            try
+            {
+                var gifInstance = new GifInstance(value);
+                gifInstance.IterationCount = IterationCount.Infinite;
+                if (gifInstance.GifPixelSize.Width < 1 || gifInstance.GifPixelSize.Height < 1)
+                    return;
+                this.gifInstance = gifInstance;
+                _customVisual?.SendHandlerMessage(gifInstance);
+            }
+            catch
+            { }
             return;
         }
         if (imageType == ImageType.png)
@@ -423,23 +428,24 @@ public class Image2 : Control, IDisposable
                 var bitmap = _currentInstance.ProcessFrameTime(_animationElapsed);
                 if (bitmap is not null)
                 {
-                    if (_currentInstance is ApngInstance apngInstance)
+                    try
                     {
-                        var ts = new Rect(_currentInstance.GetSize(1));
-                        var ns = new Rect(apngInstance._targetOffset, _currentInstance.GetSize(1));
-                        drawingContext.DrawBitmap(bitmap, ts, ns);
-
-                        //if (apngInstance._hasNewFrame)
-                        //{
-                        //    drawingContext.DrawBitmap2(bitmap, 1, ts, ns, bitmapBlending: BitmapBlendingMode.SourceOver);
-                        //}
-                        //else
-                        //{
-                        //    drawingContext.DrawBitmap2(bitmap, 1, ts, ns, bitmapBlending: BitmapBlendingMode.DestinationIn);
-                        //}
+                        if (_currentInstance is ApngInstance apngInstance)
+                        {
+                            var ts = new Rect(_currentInstance.GetSize(1));
+                            var rect = GetRenderBounds();
+                            var scale = rect.Size / ts.Size;
+                            var offsetP = new Point(apngInstance._targetOffset.X * scale.X, apngInstance._targetOffset.Y * scale.Y) ;
+                            var ns = new Rect(offsetP, rect.Size);
+                            drawingContext.DrawBitmap(bitmap, ts, ns);
+                        }
+                        else
+                        {
+                            drawingContext.DrawBitmap(bitmap, new Rect(_currentInstance.GetSize(1)), GetRenderBounds());
+                        }
                     }
-                    else
-                        drawingContext.DrawBitmap(bitmap, new Rect(_currentInstance.GetSize(1)), GetRenderBounds());
+                    catch
+                    { }
                 }
             }
             catch (Exception e)
