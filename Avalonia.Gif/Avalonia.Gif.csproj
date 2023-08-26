@@ -15,6 +15,7 @@
         <PackageReference Include="Avalonia" />
         <PackageReference Include="Avalonia.ReactiveUI" />
         <PackageReference Include="BD.Common" />
+        <PackageReference Include="BD.Common.Mvvm" />
         <PackageReference Include="BD.Common.XmlnsDefinition.Avalonia">
             <Aliases>BD_Common_XmlnsDefinition_Avalonia</Aliases>
         </PackageReference>

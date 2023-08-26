@@ -1,5 +1,8 @@
 ﻿using Avalonia.Platform;
 using Avalonia.Threading;
+using BD.Common.UI.ViewModels;
+using Nito.AsyncEx;
+using ReactiveUI;
 
 namespace Avalonia.Gif;
 
@@ -87,6 +90,21 @@ public static class ResolveStream
         {
             value = new MemoryStream(bytes);
         }
+        else if (obj is ImageSource.ClipStream stream2)
+        {
+            value = stream2.Stream;
+        }
+        //else if (obj is Task<ImageSource.ClipStream?> task)
+        //{
+        //    try
+        //    {
+        //        value = (await task.WaitAsync(token))?.Stream;
+        //    }
+        //    catch
+        //    { 
+        //        return null; 
+        //    }
+        //}
 
         if (value == null || !value.CanRead || value.Length == 0)
             return null;
