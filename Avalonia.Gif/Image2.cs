@@ -24,7 +24,7 @@ public class Image2 : Control, IDisposable
 
     //public static readonly StyledProperty<IterationCount> IterationCountProperty = AvaloniaProperty.Register<Image2, IterationCount>(nameof(IterationCount));
 
-    public static readonly StyledProperty<bool> IsFailedProperty = AvaloniaProperty.Register<Image2, bool>(nameof(IsFailed), false);
+    public static readonly StyledProperty<bool> IsFailedProperty = AvaloniaProperty.Register<Image2, bool>(nameof(IsFailed), true);
 
     public static readonly StyledProperty<bool> AutoStartProperty = AvaloniaProperty.Register<Image2, bool>(nameof(AutoStart), true);
 
@@ -251,6 +251,7 @@ public class Image2 : Control, IDisposable
         gifInstance = null;
         backingRTB?.Dispose();
         backingRTB = null;
+        IsFailed = true;
 
         if (e.NewValue == null && FallbackSource == null)
             return;
@@ -272,6 +273,7 @@ public class Image2 : Control, IDisposable
                     IsFailed = true;
                     backingRTB = DecodeImage(value);
                     value.Dispose();
+                    value = null;
                 }
             }
 
