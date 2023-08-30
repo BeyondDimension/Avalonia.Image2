@@ -32,7 +32,7 @@ public static class ResolveStream
                         if (imageHttpClientService == null)
                             return;
 
-                        value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache, cancellationToken: token);
+                        value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache, cacheFirst: isCache, cancellationToken: token);
                         if (value == null)
                             return;
                     }, CancellationToken.None);
@@ -42,7 +42,7 @@ public static class ResolveStream
                     var imageHttpClientService = Ioc.Get_Nullable<IImageHttpClientService>();
                     if (imageHttpClientService == null)
                         return null;
-                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache, cancellationToken: token);
+                    value = await imageHttpClientService.GetImageMemoryStreamAsync(rawUri, cache: isCache, cacheFirst: isCache, cancellationToken: token);
                 }
 
                 if (value == null)
