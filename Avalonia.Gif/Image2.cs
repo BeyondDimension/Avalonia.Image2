@@ -34,6 +34,8 @@ public class Image2 : Control, IDisposable
 
     public static readonly StyledProperty<bool> EnableCacheProperty = AvaloniaProperty.Register<Image2, bool>(nameof(EnableCache), true);
 
+    public static readonly StyledProperty<bool> EnableCancelTokenProperty = AvaloniaProperty.Register<Image2, bool>(nameof(EnableCancelToken), true);
+
     public static readonly StyledProperty<StretchDirection> StretchDirectionProperty = AvaloniaProperty.Register<Image2, StretchDirection>(nameof(StretchDirection), StretchDirection.Both);
 
     public static readonly StyledProperty<Stretch> StretchProperty = AvaloniaProperty.Register<Image2, Stretch>(nameof(Stretch), Stretch.UniformToFill);
@@ -43,7 +45,7 @@ public class Image2 : Control, IDisposable
     private Bitmap? backingRTB;
     private ImageType imageType;
     private bool isSimplePNG;
-    private CancellationTokenSource? _tokenSource = new();
+    private CancellationTokenSource _tokenSource = new();
     private bool disposedValue;
 
     [Content]
@@ -81,6 +83,12 @@ public class Image2 : Control, IDisposable
     {
         get => GetValue(EnableCacheProperty);
         set => SetValue(EnableCacheProperty, value);
+    }
+
+    public bool EnableCancelToken
+    {
+        get => GetValue(EnableCancelTokenProperty);
+        set => SetValue(EnableCancelTokenProperty, value);
     }
 
     public int DecodeHeight
@@ -144,8 +152,11 @@ public class Image2 : Control, IDisposable
     {
         if (FallbackSource != null && backingRTB == null)
         {
-            _tokenSource?.Cancel();
-            _tokenSource = new CancellationTokenSource();
+            if (EnableCancelToken)
+            {
+                _tokenSource.Cancel();
+                _tokenSource = new CancellationTokenSource();
+            }
             var value = await ResolveStream.ResolveObjectToStream(FallbackSource, this, _tokenSource.Token);
             if (value != null)
             {
@@ -244,8 +255,11 @@ public class Image2 : Control, IDisposable
 
     private async void SourceChanged(AvaloniaPropertyChangedEventArgs e)
     {
-        _tokenSource?.Cancel();
-        _tokenSource = new CancellationTokenSource();
+        if (EnableCancelToken)
+        {
+            _tokenSource.Cancel();
+            _tokenSource = new CancellationTokenSource();
+        }
 
         gifInstance?.Dispose();
         gifInstance = null;
@@ -437,7 +451,7 @@ public class Image2 : Control, IDisposable
                             var ts = new Rect(_currentInstance.GetSize(1));
                             var rect = GetRenderBounds();
                             var scale = rect.Size / ts.Size;
-                            var offsetP = new Point(apngInstance._targetOffset.X * scale.X, apngInstance._targetOffset.Y * scale.Y) ;
+                            var offsetP = new Point(apngInstance._targetOffset.X * scale.X, apngInstance._targetOffset.Y * scale.Y);
                             var ns = new Rect(offsetP, rect.Size);
                             drawingContext.DrawBitmap(bitmap, ts, ns);
                         }
