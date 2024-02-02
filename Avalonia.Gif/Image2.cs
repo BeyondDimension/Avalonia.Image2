@@ -346,15 +346,15 @@ public class Image2 : Control, IDisposable
                 return null;
             stream.Position = 0;
 
-            //var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-            //if (DecodeWidth > 0)
-            //{
-            //    return Bitmap.DecodeToWidth(stream, DecodeWidth, interpolationMode);
-            //}
-            //else if (DecodeHeight > 0)
-            //{
-            //    return Bitmap.DecodeToHeight(stream, DecodeHeight, interpolationMode);
-            //}
+            var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+            if (DecodeWidth > 0)
+            {
+                return Bitmap.DecodeToWidth(stream, DecodeWidth, interpolationMode);
+            }
+            else if (DecodeHeight > 0)
+            {
+                return Bitmap.DecodeToHeight(stream, DecodeHeight, interpolationMode);
+            }
 
             //https://github.com/mono/SkiaSharp/issues/1551
             return new Bitmap(stream);
