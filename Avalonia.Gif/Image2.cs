@@ -13,6 +13,7 @@ using Avalonia.VisualTree;
 using System.Numerics;
 using Avalonia.Logging;
 using Avalonia.Controls.Primitives;
+using System.IO.FileFormats;
 
 namespace Avalonia.Gif;
 
@@ -304,8 +305,10 @@ public class Image2 : Control, IDisposable
         {
             try
             {
-                var gifInstance = new GifInstance(value);
-                gifInstance.IterationCount = IterationCount.Infinite;
+                var gifInstance = new GifInstance(value)
+                {
+                    IterationCount = IterationCount.Infinite,
+                };
                 if (gifInstance.GifPixelSize.Width < 1 || gifInstance.GifPixelSize.Height < 1)
                     return;
                 this.gifInstance = gifInstance;
@@ -313,16 +316,14 @@ public class Image2 : Control, IDisposable
             }
             catch
             { }
-            return;
         }
-        if (imageType == ImageType.png)
+        else if (imageType == ImageType.png)
         {
             var apngInstance = new ApngInstance(value);
             if (apngInstance.IsSimplePNG)
             {
                 isSimplePNG = apngInstance.IsSimplePNG;
                 apngInstance.Dispose();
-                apngInstance = null;
                 backingRTB = DecodeImage(value);
             }
             else
@@ -333,9 +334,14 @@ public class Image2 : Control, IDisposable
                 gifInstance = apngInstance;
                 _customVisual?.SendHandlerMessage(gifInstance);
             }
-            return;
         }
-        backingRTB = DecodeImage(value);
+        else
+        {
+            backingRTB = DecodeImage(value);
+        }
+        InvalidateArrange();
+        InvalidateMeasure();
+        Update();
     }
 
     Bitmap? DecodeImage(Stream stream)
@@ -383,13 +389,9 @@ public class Image2 : Control, IDisposable
             .Intersect(viewPort);
 
         if (Stretch == Stretch.None)
-        {
             _customVisual.Size = new Vector2((float)sourceSize.Width, (float)sourceSize.Height);
-        }
         else
-        {
             _customVisual.Size = new Vector2((float)destRect.Size.Width, (float)destRect.Size.Height);
-        }
 
         _customVisual.Offset = new Vector3((float)destRect.Position.X, (float)destRect.Position.Y, 0);
     }
