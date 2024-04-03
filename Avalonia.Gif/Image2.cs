@@ -128,9 +128,6 @@ public class Image2 : Control, IDisposable
         {
             case nameof(Source):
                 SourceChanged(change);
-                InvalidateArrange();
-                InvalidateMeasure();
-                Update();
                 break;
             case nameof(Stretch):
             case nameof(StretchDirection):
@@ -288,7 +285,6 @@ public class Image2 : Control, IDisposable
                     IsFailed = true;
                     backingRTB = DecodeImage(value);
                     value.Dispose();
-                    value = null;
                 }
             }
 
