@@ -210,13 +210,14 @@ namespace Avalonia.Gif.Decoding
 
             if (curFrame.IsInterlaced)
             {
+                int curSrcRow = 0;
                 for (var i = 0; i < 4; i++)
                 {
                     var curPass = Pass[i];
                     var y = curPass.Start;
                     while (y < cH)
                     {
-                        DrawRow(y);
+                        DrawRow(curSrcRow++, y);
                         y += curPass.Step;
                     }
                 }
@@ -224,17 +225,17 @@ namespace Avalonia.Gif.Decoding
             else
             {
                 for (var i = 0; i < cH; i++)
-                    DrawRow(i);
+                    DrawRow(i, i);
             }
 
             //for (var row = 0; row < cH; row++)
-            void DrawRow(int row)
+            void DrawRow(int srcRow, int destRow)
             {
                 // Get the starting point of the current row on frame's index stream.
-                var indexOffset = row * cW;
+                var indexOffset = srcRow * cW;
 
                 // Get the target backbuffer offset from the frames coords.
-                var targetOffset = PixCoord(cX, row + cY);
+                var targetOffset = PixCoord(cX, destRow + cY);
                 var len = _bitmapBackBuffer.Length;
 
                 for (var i = 0; i < cW; i++)
@@ -457,7 +458,7 @@ namespace Avalonia.Gif.Decoding
                 Dimensions = _gifDimensions,
                 HasGlobalColorTable = _gctUsed,
                 // GlobalColorTableCacheID = _globalColorTable,
-                GlobarColorTable = ProcessColorTable(ref str, tmpB, _gctSize),
+                GlobarColorTable = _gctUsed ? ProcessColorTable(ref str, tmpB, _gctSize) : Array.Empty<GifColor>(),
                 GlobalColorTableSize = _gctSize,
                 BackgroundColorIndex = _bgIndex,
                 HeaderSize = _fileStream.Position
