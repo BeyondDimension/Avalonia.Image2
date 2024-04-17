@@ -265,10 +265,10 @@ public class Image2 : Control, IDisposable
         backingRTB = null;
         IsFailed = true;
 
-        if (e.NewValue == null && FallbackSource == null)
+        if (e.NewValue == null && FallbackSource == null) 
+        {
             return;
-        if (e.NewValue == e.OldValue)
-            return;
+        }
 
         Stream? value;
         if (e.NewValue is Bitmap bitmap)
@@ -294,7 +294,12 @@ public class Image2 : Control, IDisposable
         }
 
         if (value == null)
+        {
+            InvalidateArrange();
+            InvalidateMeasure();
+            Update();
             return;
+        }
 
         IsFailed = false;
         imageType = value.GetImageType();
