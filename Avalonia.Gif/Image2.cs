@@ -214,7 +214,7 @@ public class Image2 : Control, IDisposable
     {
         if (gifInstance != null)
         {
-            var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
             return Stretch.CalculateSize(availableSize, gifInstance.GetSize(scaling),
                 StretchDirection);
         }
@@ -231,7 +231,7 @@ public class Image2 : Control, IDisposable
     {
         if (gifInstance != null)
         {
-            var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+            var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
             var sourceSize = gifInstance.GetSize(scaling);
             return Stretch.CalculateSize(finalSize, sourceSize);
         }
@@ -381,7 +381,7 @@ public class Image2 : Control, IDisposable
         if (_customVisual is null || gifInstance is null)
             return;
 
-        var dpi = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+        var dpi = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
         var sourceSize = gifInstance.GetSize(dpi);
         var viewPort = new Rect(Bounds.Size);
 

@@ -133,7 +133,7 @@ public class GifImage : Control
         if (_customVisual is null || _gifInstance is null)
             return;
 
-        var dpi = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+        var dpi = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
         var sourceSize = _gifInstance.GifPixelSize.ToSize(dpi);
         var viewPort = new Rect(Bounds.Size);
 
@@ -225,7 +225,7 @@ public class GifImage : Control
     protected override Size MeasureOverride(Size availableSize)
     {
         var result = new Size();
-        var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+        var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
         if (_gifInstance != null)
         {
             result = Stretch.CalculateSize(availableSize, _gifInstance.GifPixelSize.ToSize(scaling),
@@ -239,7 +239,7 @@ public class GifImage : Control
     protected override Size ArrangeOverride(Size finalSize)
     {
         if (_gifInstance is null) return new Size();
-        var scaling = this.GetVisualRoot()?.RenderScaling ?? 1.0;
+        var scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0;
         var sourceSize = _gifInstance.GifPixelSize.ToSize(scaling);
         var result = Stretch.CalculateSize(finalSize, sourceSize);
         return result;
