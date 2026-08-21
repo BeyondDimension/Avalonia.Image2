@@ -8,6 +8,11 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
+	<!-- 👇 .NET 11+ 配置 -->
+	<PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
+		<Features>$(Features);runtime-async=on</Features>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<InternalsVisibleTo Include="Avalonia.Gif.Test" />
 	</ItemGroup>
