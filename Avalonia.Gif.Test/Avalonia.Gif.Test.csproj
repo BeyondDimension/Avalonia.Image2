@@ -1,37 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
 
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Inputs\*.gif" />
-    <EmbeddedResource Include="Inputs\*.gif" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="Inputs\*.gif" />
+		<EmbeddedResource Include="Inputs\*.gif" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="nunit" />
-    <PackageReference Include="ApprovalTests" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="NUnit3TestAdapter" />
-    <PackageReference Include="coverlet.collector" />
+	<ItemGroup>
+		<PackageReference Include="nunit" />
+		<PackageReference Include="ApprovalTests" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="NUnit3TestAdapter" />
+		<PackageReference Include="coverlet.collector" />
 
-    <PackageReference Include="Avalonia" />
-    <PackageReference Include="Avalonia.Desktop" />
-    <PackageReference Include="Avalonia.Themes.Simple" />
-  </ItemGroup>
+		<PackageReference Include="Avalonia" />
+		<PackageReference Include="Avalonia.Desktop" />
+		<PackageReference Include="Avalonia.Themes.Simple" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Avalonia.Gif\Avalonia.Gif.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Avalonia.Gif\Avalonia.Gif.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Apps\App.axaml.cs">
-      <DependentUpon>%(Filename)</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Update="Apps\App.axaml.cs">
+			<DependentUpon>%(Filename)</DependentUpon>
+		</Compile>
+	</ItemGroup>
 </Project>
